@@ -3,11 +3,10 @@ package icapclient
 import (
 	"errors"
 	"net/url"
-	"strings"
 )
 
 func validMethod(method string) (bool, error) {
-	if _, registered := registeredMethods[strings.ToUpper(method)]; !registered {
+	if _, registered := registeredMethods[method]; !registered {
 		return false, errors.New(ErrMethodNotRegistered)
 	}
 
