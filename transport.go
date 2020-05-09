@@ -26,8 +26,8 @@ func (t *transport) dial() error {
 }
 
 // Write writes data to the server
-func (t *transport) write(data string) (int, error) {
-	return t.sckt.Write([]byte(data))
+func (t *transport) write(data []byte) (int, error) {
+	return t.sckt.Write(data)
 }
 
 // Read reads data from server

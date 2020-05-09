@@ -13,13 +13,15 @@ const (
 	ErrMethodNotRegistered = "the requested method is not registered"
 	ErrInvalidHost         = "the requested host is invalid"
 	ErrConnectionNotOpen   = "no open connection to close"
-	ErrInvalidICAPResponse = "invalid response received from icap server"
-	ErrInvalidHTTPResponse = "invalid response received from http server"
+	ErrInvalidTCPMsg       = "invalid tcp message"
 )
 
 // general constants required for the package
 const (
-	SchemeICAP  = "icap"
-	ICAPVersion = "ICAP/1.0"
-	HTTPVersion = "HTTP/1.1"
+	SchemeICAP     = "icap"
+	ICAPVersion    = "ICAP/1.0"
+	HTTPVersion    = "HTTP/1.1"
+	SchemeHTTPReq  = "http_request"
+	SchemeHTTPResp = "http_response"
+	CRLF           = "\r\n"
 )

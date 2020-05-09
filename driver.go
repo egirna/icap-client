@@ -44,15 +44,9 @@ func (d *Driver) Close() error {
 }
 
 // Send sends a request to the icap server
-func (d *Driver) Send(req *Request) error {
+func (d *Driver) Send(data []byte) error {
 
-	b, err := DumpRequest(req)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = d.tcp.write(string(b))
+	_, err := d.tcp.write(data)
 
 	if err != nil {
 		return err

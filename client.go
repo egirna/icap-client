@@ -11,10 +11,6 @@ type Client struct {
 
 // Do makes the call
 func (c *Client) Do(req *Request) (*Response, error) {
-	return c.do(req)
-}
-
-func (c *Client) do(req *Request) (*Response, error) {
 
 	port, err := strconv.Atoi(req.URL.Port())
 
@@ -30,7 +26,13 @@ func (c *Client) do(req *Request) (*Response, error) {
 
 	defer c.scktDriver.Close()
 
-	if err := c.scktDriver.Send(req); err != nil {
+	d, err := DumpRequest(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.scktDriver.Send(d); err != nil {
 		return nil, err
 	}
 
@@ -41,5 +43,4 @@ func (c *Client) do(req *Request) (*Response, error) {
 	}
 
 	return resp, nil
-
 }
