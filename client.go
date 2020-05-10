@@ -1,6 +1,7 @@
 package icapclient
 
 import (
+	"os"
 	"strconv"
 )
 
@@ -25,6 +26,14 @@ func (c *Client) Do(req *Request) (*Response, error) {
 	}
 
 	defer c.scktDriver.Close()
+
+	if _, exists := req.Header["Allow"]; !exists {
+		req.Header.Add("Allow", "204") // assigning 204 by default if Allow not provided
+	}
+	if _, exists := req.Header["Host"]; !exists {
+		hostName, _ := os.Hostname()
+		req.Header.Add("Host", hostName)
+	}
 
 	d, err := DumpRequest(req)
 
