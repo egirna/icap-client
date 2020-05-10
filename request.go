@@ -59,7 +59,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 	}
 
-	reqStr += "\n"
+	reqStr += LF
 
 	if req.HTTPRequest != nil {
 		b, err := httputil.DumpRequestOut(req.HTTPRequest, true)

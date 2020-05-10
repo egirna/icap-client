@@ -59,7 +59,7 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 		// preparing the header for ICAP & contents for HTTP messages below
 
 		if scheme == SchemeICAP {
-			if currentMsg == "\n" { // don't want to count the Line Feed as header
+			if currentMsg == LF { // don't want to count the Line Feed as header
 				continue
 			}
 			header, val := getHeaderVal(currentMsg)
@@ -70,10 +70,6 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 			httpMsg += strings.TrimSpace(currentMsg) + CRLF
 			bufferEmpty := b.Buffered() == 0
 			if currentMsg == CRLF || bufferEmpty { // a CRLF indicates the end of a http message and the buffer check is just in case the buffer eneded with one last message instead of a CRLF
-
-				// if bufferEmpty && currentMsg != "" {
-				// 	httpMsg += currentMsg
-				// }
 				httpMsg += CRLF
 				var erR error
 				resp.ContentRequest, erR = http.ReadRequest(bufio.NewReader(strings.NewReader(httpMsg)))
@@ -88,10 +84,6 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 			httpMsg += strings.TrimSpace(currentMsg) + CRLF
 			bufferEmpty := b.Buffered() == 0
 			if currentMsg == CRLF || bufferEmpty {
-
-				// if bufferEmpty && currentMsg != "" {
-				// 	httpMsg += strings.TrimSpace(currentMsg)
-				// }
 				httpMsg += CRLF
 				var erR error
 				resp.ContentResponse, erR = http.ReadResponse(bufio.NewReader(strings.NewReader(httpMsg)), resp.ContentRequest)

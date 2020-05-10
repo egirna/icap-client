@@ -24,4 +24,5 @@ const (
 	SchemeHTTPReq  = "http_request"
 	SchemeHTTPResp = "http_response"
 	CRLF           = "\r\n"
+	LF             = "\n"
 )
