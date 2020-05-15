@@ -32,7 +32,7 @@ func TestRequest(t *testing.T) {
 	t.Run("DumpRequest", func(t *testing.T) {
 
 		httpReq, _ := http.NewRequest(http.MethodGet, "http://something.com/somewhere", bytes.NewBuffer([]byte(`Hello World`)))
-		req, _ := NewRequest("options", "icap://localhost:1344/something", httpReq, nil)
+		req, _ := NewRequest(MethodOPTIONS, "icap://localhost:1344/something", httpReq, nil)
 
 		b, err := DumpRequest(req)
 

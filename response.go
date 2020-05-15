@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -11,6 +12,7 @@ import (
 type Response struct {
 	StatusCode      int
 	Status          string
+	PreviewBytes    int
 	Header          http.Header
 	ContentRequest  *http.Request
 	ContentResponse *http.Response
@@ -59,10 +61,14 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 		// preparing the header for ICAP & contents for HTTP messages below
 
 		if scheme == SchemeICAP {
-			if currentMsg == LF { // don't want to count the Line Feed as header
+			if currentMsg == LF || currentMsg == CRLF { // don't want to count the Line Feed as header
 				continue
 			}
 			header, val := getHeaderVal(currentMsg)
+			if header == "Preview" {
+				pb, _ := strconv.Atoi(val)
+				resp.PreviewBytes = pb
+			}
 			resp.Header.Add(header, val)
 		}
 

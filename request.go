@@ -1,10 +1,14 @@
 package icapclient
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 )
 
@@ -47,6 +51,28 @@ func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Res
 	return req, nil
 }
 
+// SetPreview sets the preview bytes in the icap header
+func (r *Request) SetPreview(maxBytes int) error {
+	bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
+
+	if err != nil {
+		return err
+	}
+
+	previewBytes := len(bodyBytes)
+
+	if len(bodyBytes) > maxBytes {
+		previewBytes = maxBytes
+	}
+
+	r.Header.Set("Preview", strconv.Itoa(previewBytes))
+
+	r.HTTPResponse.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
+
+	return nil
+
+}
+
 // DumpRequest returns the given request in its ICAP/1.x wire
 // representation.
 func DumpRequest(req *Request) ([]byte, error) {
@@ -59,17 +85,20 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 	}
 
+	reqStr += "Encapsulated: %s\n"
 	reqStr += LF
 
+	httpReqStr := ""
 	if req.HTTPRequest != nil {
 		b, err := httputil.DumpRequestOut(req.HTTPRequest, true)
 
 		if err != nil {
 			return nil, err
 		}
-		reqStr += string(b)
+		httpReqStr += string(b)
 	}
 
+	httpRespStr := ""
 	if req.HTTPResponse != nil {
 		b, err := httputil.DumpResponse(req.HTTPResponse, true)
 
@@ -77,8 +106,29 @@ func DumpRequest(req *Request) ([]byte, error) {
 			return nil, err
 		}
 
-		reqStr += string(b)
+		httpRespStr += string(b)
 	}
 
-	return []byte(reqStr), nil
+	if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) {
+		httpRespStr += DoubleCRLF
+	}
+
+	reqStr = setEncapsulatedHeaderValue(reqStr, httpReqStr, httpRespStr)
+
+	data := []byte(reqStr + httpReqStr + httpRespStr)
+
+	fmt.Println(string(data))
+
+	return data, nil
+}
+
+// SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
+func SetDefaultRequestHeaders(req *Request) {
+	if _, exists := req.Header["Allow"]; !exists {
+		req.Header.Add("Allow", "204") // assigning 204 by default if Allow not provided
+	}
+	if _, exists := req.Header["Host"]; !exists {
+		hostName, _ := os.Hostname()
+		req.Header.Add("Host", hostName)
+	}
 }

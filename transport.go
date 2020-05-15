@@ -1,7 +1,7 @@
 package icapclient
 
 import (
-	"bufio"
+	"io"
 	"net"
 )
 
@@ -33,13 +33,25 @@ func (t *transport) write(data []byte) (int, error) {
 // Read reads data from server
 func (t *transport) read() (string, error) {
 
-	respMsg, err := bufio.NewReader(t.sckt).ReadString('\n')
+	data := make([]byte, 0)
 
-	if err != nil {
-		return "", err
+	for {
+		tmp := make([]byte, 1096)
+
+		n, err := t.sckt.Read(tmp)
+
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", err
+		}
+
+		data = append(data, tmp[:n]...)
+
 	}
 
-	return respMsg, nil
+	return string(data), nil
 }
 
 func (t *transport) close() error {
