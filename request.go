@@ -90,6 +90,9 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	httpReqStr := ""
 	if req.HTTPRequest != nil {
+		if err := addHexaRequestBodyByteNotations(req.HTTPRequest); err != nil {
+			return nil, err
+		}
 		b, err := httputil.DumpRequestOut(req.HTTPRequest, true)
 
 		if err != nil {
@@ -100,6 +103,9 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	httpRespStr := ""
 	if req.HTTPResponse != nil {
+		if err := addHexaResponseBodyByteNotations(req.HTTPResponse); err != nil {
+			return nil, err
+		}
 		b, err := httputil.DumpResponse(req.HTTPResponse, true)
 
 		if err != nil {
@@ -117,9 +123,62 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
 
-	fmt.Println(string(data))
-
 	return data, nil
+}
+
+func addHexaResponseBodyByteNotations(r *http.Response) error {
+
+	if r.Body == nil {
+		return nil
+	}
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	if len(b) < 1 {
+		return nil
+	}
+
+	bodyStr := string(b)
+
+	bodyStr = fmt.Sprintf("%x\r\n", len(b)) + bodyStr + CRLF + "0" + CRLF
+
+	newBodyByte := []byte(bodyStr)
+
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte))
+	r.ContentLength = int64(len(newBodyByte))
+
+	return nil
+
+}
+
+func addHexaRequestBodyByteNotations(req *http.Request) error {
+	if req.Body == nil {
+		return nil
+	}
+
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+
+	if len(b) < 1 {
+		return nil
+	}
+
+	bodyStr := string(b)
+
+	bodyStr = fmt.Sprintf("%x\r\n", len(b)) + bodyStr + CRLF + "0" + CRLF
+
+	newBodyByte := []byte(bodyStr)
+
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte))
+	req.ContentLength = int64(len(newBodyByte))
+
+	return nil
+
 }
 
 // SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
