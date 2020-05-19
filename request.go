@@ -73,6 +73,24 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 }
 
+// SetAllOptionValues sets the values obtained from OPTIONS
+func (r *Request) SetAllOptionValues(optHeader http.Header) {
+	for hdr, vals := range optHeader {
+		if _, exists := optionValues[hdr]; exists {
+			for _, val := range vals {
+				if hdr == PreviewHeader {
+					pb, _ := strconv.Atoi(val)
+					r.SetPreview(pb)
+					break
+				}
+				r.Header.Add(hdr, val)
+			}
+		}
+
+	}
+
+}
+
 // DumpRequest returns the given request in its ICAP/1.x wire
 // representation.
 func DumpRequest(req *Request) ([]byte, error) {

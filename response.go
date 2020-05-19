@@ -18,6 +18,23 @@ type Response struct {
 	ContentResponse *http.Response
 }
 
+var (
+	optionValues = map[string]bool{
+		PreviewHeader:          true,
+		MethodsHeader:          true,
+		AllowHeader:            true,
+		TransferPreviewHeader:  true,
+		ServiceHeader:          true,
+		ISTagHeader:            true,
+		OptBodyTypeHeader:      true,
+		MaxConnectionsHeader:   true,
+		OptionsTTLHeader:       true,
+		ServiceIDHeader:        true,
+		TransferIgnoreHeader:   true,
+		TransferCompleteHeader: true,
+	}
+)
+
 // ReadResponse converts a Reader to a icapclient Response
 func ReadResponse(b *bufio.Reader) (*Response, error) {
 
@@ -40,7 +57,7 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 
 			if ss[0] == ICAPVersion {
 				scheme = SchemeICAP
-				resp.StatusCode, resp.Status, err = getStatusWithCode(ss[1], ss[2])
+				resp.StatusCode, resp.Status, err = getStatusWithCode(ss[1], strings.Join(ss[2:], " "))
 				if err != nil {
 					return nil, err
 				}
@@ -65,7 +82,7 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 				continue
 			}
 			header, val := getHeaderVal(currentMsg)
-			if header == "Preview" {
+			if header == PreviewHeader {
 				pb, _ := strconv.Atoi(val)
 				resp.PreviewBytes = pb
 			}

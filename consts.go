@@ -27,3 +27,19 @@ const (
 	DoubleCRLF     = "\r\n\r\n"
 	LF             = "\n"
 )
+
+// Common ICAP headers
+const (
+	PreviewHeader          = "Preview"
+	MethodsHeader          = "Methods"
+	AllowHeader            = "Allow"
+	TransferPreviewHeader  = "Transfer-Preview"
+	ServiceHeader          = "Service"
+	ISTagHeader            = "ISTag"
+	OptBodyTypeHeader      = "Opt-body-type"
+	MaxConnectionsHeader   = "Max-Connections"
+	OptionsTTLHeader       = "Options-TTL"
+	ServiceIDHeader        = "Service-ID"
+	TransferIgnoreHeader   = "Transfer-Ignore"
+	TransferCompleteHeader = "Transfer-Complete"
+)
