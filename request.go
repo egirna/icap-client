@@ -73,6 +73,17 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 }
 
+// SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
+func (r *Request) SetDefaultRequestHeaders() {
+	if _, exists := r.Header["Allow"]; !exists {
+		r.Header.Add("Allow", "204") // assigning 204 by default if Allow not provided
+	}
+	if _, exists := r.Header["Host"]; !exists {
+		hostName, _ := os.Hostname()
+		r.Header.Add("Host", hostName)
+	}
+}
+
 // DumpRequest returns the given request in its ICAP/1.x wire
 // representation.
 func DumpRequest(req *Request) ([]byte, error) {
@@ -90,10 +101,11 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	httpReqStr := ""
 	if req.HTTPRequest != nil {
-		if err := addHexaRequestBodyByteNotations(req.HTTPRequest); err != nil {
+		httpReq, err := addHexaRequestBodyByteNotations(*req.HTTPRequest)
+		if err != nil {
 			return nil, err
 		}
-		b, err := httputil.DumpRequestOut(req.HTTPRequest, true)
+		b, err := httputil.DumpRequestOut(&httpReq, true)
 
 		if err != nil {
 			return nil, err
@@ -103,10 +115,11 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	httpRespStr := ""
 	if req.HTTPResponse != nil {
-		if err := addHexaResponseBodyByteNotations(req.HTTPResponse); err != nil {
+		httpResp, err := addHexaResponseBodyByteNotations(*req.HTTPResponse)
+		if err != nil {
 			return nil, err
 		}
-		b, err := httputil.DumpResponse(req.HTTPResponse, true)
+		b, err := httputil.DumpResponse(&httpResp, true)
 
 		if err != nil {
 			return nil, err
@@ -126,68 +139,71 @@ func DumpRequest(req *Request) ([]byte, error) {
 	return data, nil
 }
 
-func addHexaResponseBodyByteNotations(r *http.Response) error {
+// addHexaResponseBodyByteNotations adds body bytes Hexadecimal notations before and after body chunk
+// for example: for a body, "Hello World", this function adds
+// b
+// Hello World
+// 0
+func addHexaResponseBodyByteNotations(r http.Response) (http.Response, error) {
 
 	if r.Body == nil {
-		return nil
+		return r, nil
 	}
 
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return err
+		return r, err
 	}
 
+	defer r.Body.Close()
+
 	if len(b) < 1 {
-		return nil
+		return r, nil
 	}
 
 	bodyStr := string(b)
 
-	bodyStr = fmt.Sprintf("%x\r\n", len(b)) + bodyStr + CRLF + "0" + CRLF
+	bodyStr = fmt.Sprintf("%x\r\n", len(b)) + bodyStr + CRLF + "0" + CRLF // the byte length in Hexadecimal with a body and ending with \r\n0\r\n
 
 	newBodyByte := []byte(bodyStr)
 
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte))
-	r.ContentLength = int64(len(newBodyByte))
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte)) // returning the body bytes back to the body as it is already read once
+	r.ContentLength = int64(len(newBodyByte))               // adapting the content length according to the new byte length of the body
 
-	return nil
+	return r, nil
 
 }
 
-func addHexaRequestBodyByteNotations(req *http.Request) error {
+// addHexaRequestBodyByteNotations adds body bytes Hexadecimal notations before and after body chunk
+// for example: for a body, "Hello World", this function adds
+// b
+// Hello World
+// 0
+func addHexaRequestBodyByteNotations(req http.Request) (http.Request, error) {
 	if req.Body == nil {
-		return nil
+		return req, nil
 	}
 
 	b, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		return err
+		return req, err
 	}
 
+	defer req.Body.Close()
+
 	if len(b) < 1 {
-		return nil
+		return req, nil
 	}
 
 	bodyStr := string(b)
 
-	bodyStr = fmt.Sprintf("%x\r\n", len(b)) + bodyStr + CRLF + "0" + CRLF
+	bodyStr = fmt.Sprintf("%x\r\n", len(b)) + bodyStr + CRLF + "0" + CRLF // the byte length in Hexadecimal with a body and ending with \r\n0\r\n
 
 	newBodyByte := []byte(bodyStr)
 
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte))
-	req.ContentLength = int64(len(newBodyByte))
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte)) // returning the body bytes back to the body as it is already read once
+	req.ContentLength = int64(len(newBodyByte))               // adapting the content length according to the new byte length of the body
 
-	return nil
+	return req, nil
 
-}
-
-// SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
-func SetDefaultRequestHeaders(req *Request) {
-	if _, exists := req.Header["Allow"]; !exists {
-		req.Header.Add("Allow", "204") // assigning 204 by default if Allow not provided
-	}
-	if _, exists := req.Header["Host"]; !exists {
-		hostName, _ := os.Hostname()
-		req.Header.Add("Host", hostName)
-	}
 }

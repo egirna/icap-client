@@ -26,7 +26,7 @@ func (c *Client) Do(req *Request) (*Response, error) {
 
 	defer c.scktDriver.Close()
 
-	SetDefaultRequestHeaders(req)
+	req.SetDefaultRequestHeaders()
 
 	d, err := DumpRequest(req)
 
