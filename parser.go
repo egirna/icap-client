@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// getStatusWithCode prepares the status code and status text from two given strings
 func getStatusWithCode(str1, str2 string) (int, string, error) {
 
 	statusCode, err := strconv.Atoi(str1)
@@ -20,6 +21,7 @@ func getStatusWithCode(str1, str2 string) (int, string, error) {
 	return statusCode, status, nil
 }
 
+// getHeaderVal parses the header and its value from a tcp message string
 func getHeaderVal(str string) (string, string) {
 
 	headerVals := strings.SplitN(str, ":", 2)
@@ -34,29 +36,33 @@ func getHeaderVal(str string) (string, string) {
 
 }
 
+// isRequestLine determines if the tcp message string is a request line, i.e the first line of the message or not
 func isRequestLine(str string) bool {
 	return strings.Contains(str, ICAPVersion) || strings.Contains(str, HTTPVersion)
 }
 
+// setEncapsulatedHeaderValue generates the Encapsulated  values and assigns to the ICAP request string
 func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) string {
 	encpVal := " "
 
-	if strings.HasPrefix(icapReqStr, MethodOPTIONS) {
-		if httpReqStr == "" && httpRespStr == "" {
+	if strings.HasPrefix(icapReqStr, MethodOPTIONS) { // if the request method is OPTIONS
+		if httpReqStr == "" && httpRespStr == "" { // the most common case for OPTIONS method, no Encapsulated body
 			encpVal += "null-body=0"
+		} else {
+			encpVal += "opt-body=0" // if there is an Encapsulated body
 		}
 	}
 
-	if strings.HasPrefix(icapReqStr, MethodREQMOD) || strings.HasPrefix(icapReqStr, MethodRESPMOD) {
-		re, _ := regexp.Compile(DoubleCRLF)
-		reqIndices := re.FindAllStringIndex(httpReqStr, -1)
+	if strings.HasPrefix(icapReqStr, MethodREQMOD) || strings.HasPrefix(icapReqStr, MethodRESPMOD) { // if the request method is RESPMOD or REQMOD
+		re := regexp.MustCompile(DoubleCRLF)                // looking for the match of the string \r\n\r\n, as that is the expression that seperates each blocks, i.e headers and bodies
+		reqIndices := re.FindAllStringIndex(httpReqStr, -1) // getting the offsets of the matches, tells us the starting/ending point of headers and bodies
 
-		reqEndsAt := 0
+		reqEndsAt := 0 // this is needed to calculate the response headers by adding the last offset of the request block
 		if reqIndices != nil {
 			encpVal += "req-hdr=0"
 			reqEndsAt = reqIndices[0][1]
-			if len(reqIndices) > 1 {
-				encpVal += fmt.Sprintf(", req-body=%d", reqIndices[0][1])
+			if len(reqIndices) > 1 { // indicating there is a body present for the request block, as length would have been 1 for a single match of \r\n\r\n
+				encpVal += fmt.Sprintf(", req-body=%d", reqIndices[0][1]) // assigning the starting point of the body
 				reqEndsAt = reqIndices[1][1]
 			} else if httpRespStr == "" {
 				encpVal += fmt.Sprintf(", null-body=%d", reqIndices[0][1])
@@ -77,49 +83,5 @@ func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) stri
 
 	}
 
-	return fmt.Sprintf(icapReqStr, encpVal)
+	return fmt.Sprintf(icapReqStr, encpVal) // formatting the ICAP request Encapsulated header with the value
 }
-
-// func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) string {
-// 	encpVal := " "
-//
-// 	re, _ := regexp.Compile("\r\n\r\n")
-//
-// 	spew.Dump(re.FindAllStringIndex(httpReqStr, -1), re.FindAllStringIndex(httpRespStr, -1))
-// 	spew.Dump("req", httpReqStr, "resp", httpRespStr)
-//
-// 	if iss := strings.Split(icapReqStr, " "); len(iss) > 0 && iss[0] == MethodOPTIONS {
-// 		encpVal += "null-body=0"
-// 	} else if iss[0] == MethodREQMOD || iss[0] == MethodRESPMOD {
-//
-// 		// reqBodyLen := 0
-// 		reqHeaderLen := 0
-// 		if httpReqStr != "" {
-// 			encpVal += "req-hdr=0"
-// 			hss := strings.Split(httpReqStr, CRLF+CRLF)
-// 			reqHeaderLen = len([]byte(hss[0]))
-//
-// 			if len(hss) > 1 && hss[1] != "" {
-// 				reqBody := reqHeaderLen + 1
-// 				encpVal += fmt.Sprintf(", req-body=%d", reqBody)
-// 				// reqBodyLen = len([]byte(hss[1]))
-// 			}
-// 		}
-//
-// 		if httpRespStr != "" {
-// 			if encpVal != " " {
-// 				encpVal += ", "
-// 			}
-// 			hss := strings.Split(httpRespStr, CRLF+CRLF)
-// 			respHdr := 112 //reqHeaderLen + reqBodyLen  + 1
-// 			encpVal += fmt.Sprintf("res-hdr=%d", respHdr)
-// 			if len(hss) > 1 && hss[1] != "" {
-// 				// respHeaderLen := len([]byte(hss[0]))
-// 				encpVal += fmt.Sprintf(", res-body=%d", 417) //respHdr+respHeaderLen+1)
-// 			}
-// 		}
-//
-// 	}
-//
-// 	return fmt.Sprintf(icapReqStr+httpReqStr+httpRespStr, encpVal)
-// }
