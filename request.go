@@ -8,17 +8,21 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 )
 
 // Request represents the icap client request data
 type Request struct {
-	Method       string
-	URL          *url.URL
-	Header       http.Header
-	HTTPRequest  *http.Request
-	HTTPResponse *http.Response
+	Method                string
+	URL                   *url.URL
+	Header                http.Header
+	HTTPRequest           *http.Request
+	HTTPResponse          *http.Response
+	ChunkLength           int
+	PreviewBytes          int
+	previewSet            bool
+	bodyFittedInPreview   bool
+	remainingPreviewBytes []byte
 }
 
 // NewRequest is the factory function for Request
@@ -49,28 +53,6 @@ func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Res
 	}
 
 	return req, nil
-}
-
-// SetPreview sets the preview bytes in the icap header
-func (r *Request) SetPreview(maxBytes int) error {
-	bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
-
-	if err != nil {
-		return err
-	}
-
-	previewBytes := len(bodyBytes)
-
-	if len(bodyBytes) > maxBytes {
-		previewBytes = maxBytes
-	}
-
-	r.Header.Set("Preview", strconv.Itoa(previewBytes))
-
-	r.HTTPResponse.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
-
-	return nil
-
 }
 
 // SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
@@ -114,6 +96,11 @@ func DumpRequest(req *Request) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		if httpReq.Body != nil {
+			defer httpReq.Body.Close()
+		}
+
 		httpReqStr += string(b)
 	}
 
@@ -131,16 +118,26 @@ func DumpRequest(req *Request) ([]byte, error) {
 			return nil, err
 		}
 
+		if httpResp.Body != nil {
+			defer httpResp.Body.Close()
+		}
+
 		httpRespStr += string(b)
 	}
 
 	if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
-		httpRespStr += DoubleCRLF
+		httpRespStr += CRLF
 	}
 
 	reqStr = setEncapsulatedHeaderValue(reqStr, httpReqStr, httpRespStr)
 
+	if req.bodyFittedInPreview {
+		httpRespStr = addFullBodyInPreviewIndicator(httpRespStr)
+	}
+
 	data := []byte(reqStr + httpReqStr + httpRespStr)
+
+	fmt.Println(string(data))
 
 	return data, nil
 }
@@ -152,6 +149,8 @@ func DumpRequest(req *Request) ([]byte, error) {
 // 0
 func addHexaResponseBodyByteNotations(r http.Response) (http.Response, error) {
 
+	// FIXME: stop modifying the original response
+
 	if r.Body == nil {
 		return r, nil
 	}
@@ -160,8 +159,6 @@ func addHexaResponseBodyByteNotations(r http.Response) (http.Response, error) {
 	if err != nil {
 		return r, err
 	}
-
-	defer r.Body.Close()
 
 	if len(b) < 1 {
 		return r, nil
@@ -194,8 +191,6 @@ func addHexaRequestBodyByteNotations(req http.Request) (http.Request, error) {
 	if err != nil {
 		return req, err
 	}
-
-	defer req.Body.Close()
 
 	if len(b) < 1 {
 		return req, nil

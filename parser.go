@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // getStatusWithCode prepares the status code and status text from two given strings
@@ -84,4 +86,27 @@ func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) stri
 	}
 
 	return fmt.Sprintf(icapReqStr, encpVal) // formatting the ICAP request Encapsulated header with the value
+}
+
+func addFullBodyInPreviewIndicator(str string) string {
+	str = strings.TrimSuffix(str, DoubleCRLF)
+	spew.Dump(str)
+	str += fmt.Sprintf("; ieof%s", DoubleCRLF)
+	return str
+}
+
+func chunkBodyByBytes(bdyByte []byte, cl int) []byte {
+
+	newBytes := []byte{}
+
+	for i := 0; i < len(bdyByte); i += cl {
+		end := i + cl
+		if end > len(bdyByte) {
+			end = len(bdyByte)
+		}
+
+		newBytes = append(newBytes, []byte(fmt.Sprintf("%x\r\n", len(bdyByte[i:end]))+string(bdyByte[i:end]))...)
+	}
+
+	return newBytes
 }
