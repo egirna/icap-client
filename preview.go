@@ -11,10 +11,14 @@ import (
 // SetPreview sets the preview bytes in the icap header
 func (r *Request) SetPreview(maxBytes int) error {
 
-	// FIXME: Preview bytes not being set properly as the addHexaResponseBodyByteNotations is not copying but modifiy the original response
-
 	if r.HTTPResponse == nil {
 		return nil
+	}
+
+	respWithNotation, err := addHexaResponseBodyByteNotations(r.HTTPResponse)
+
+	if err != nil {
+		return err
 	}
 
 	bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
@@ -24,12 +28,6 @@ func (r *Request) SetPreview(maxBytes int) error {
 	}
 
 	defer r.HTTPResponse.Body.Close()
-
-	respWithNotation, err := addHexaResponseBodyByteNotations(*r.HTTPResponse)
-
-	if err != nil {
-		return err
-	}
 
 	bdyBytesWithNotation, err := ioutil.ReadAll(respWithNotation.Body)
 

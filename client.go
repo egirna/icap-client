@@ -45,15 +45,15 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview {
-		return c.DoPreview(req)
+	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview && req.previewSet {
+		return c.DoRemaining(req)
 	}
 
 	return resp, nil
 }
 
-// DoPreview requests an ICAP server with the remaining body bytes which did not fit in the preview in the original request
-func (c *Client) DoPreview(req *Request) (*Response, error) {
+// DoRemaining requests an ICAP server with the remaining body bytes which did not fit in the preview in the original request
+func (c *Client) DoRemaining(req *Request) (*Response, error) {
 
 	chunkLength := req.ChunkLength
 

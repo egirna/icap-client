@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // getStatusWithCode prepares the status code and status text from two given strings
@@ -90,8 +88,7 @@ func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) stri
 
 func addFullBodyInPreviewIndicator(str string) string {
 	str = strings.TrimSuffix(str, DoubleCRLF)
-	spew.Dump(str)
-	str += fmt.Sprintf("; ieof%s", DoubleCRLF)
+	str += fullBodyEndIndicatorPreviewMode
 	return str
 }
 

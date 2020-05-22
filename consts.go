@@ -18,14 +18,16 @@ const (
 
 // general constants required for the package
 const (
-	SchemeICAP     = "icap"
-	ICAPVersion    = "ICAP/1.0"
-	HTTPVersion    = "HTTP/1.1"
-	SchemeHTTPReq  = "http_request"
-	SchemeHTTPResp = "http_response"
-	CRLF           = "\r\n"
-	DoubleCRLF     = "\r\n\r\n"
-	LF             = "\n"
+	SchemeICAP                      = "icap"
+	ICAPVersion                     = "ICAP/1.0"
+	HTTPVersion                     = "HTTP/1.1"
+	SchemeHTTPReq                   = "http_request"
+	SchemeHTTPResp                  = "http_response"
+	CRLF                            = "\r\n"
+	DoubleCRLF                      = "\r\n\r\n"
+	LF                              = "\n"
+	bodyEndIndicator                = CRLF + "0" + CRLF
+	fullBodyEndIndicatorPreviewMode = "; ieof" + DoubleCRLF
 )
 
 // Common ICAP headers
