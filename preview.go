@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"strconv"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // SetPreview sets the preview bytes in the icap header
@@ -13,12 +11,6 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 	if r.HTTPResponse == nil {
 		return nil
-	}
-
-	respWithNotation, err := addHexaResponseBodyByteNotations(r.HTTPResponse)
-
-	if err != nil {
-		return err
 	}
 
 	bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
@@ -29,17 +21,7 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 	defer r.HTTPResponse.Body.Close()
 
-	bdyBytesWithNotation, err := ioutil.ReadAll(respWithNotation.Body)
-
-	if err != nil {
-		return err
-	}
-
-	defer respWithNotation.Body.Close()
-
-	spew.Dump(string(bodyBytes))
-
-	previewBytes := len(bdyBytesWithNotation)
+	previewBytes := len(bodyBytes)
 	r.bodyFittedInPreview = true
 
 	if len(bodyBytes) > maxBytes {

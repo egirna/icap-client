@@ -1,10 +1,7 @@
 package icapclient
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -88,42 +85,28 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	httpReqStr := ""
 	if req.HTTPRequest != nil {
-		httpReq, err := addHexaRequestBodyByteNotations(req.HTTPRequest) // getting a copy of the request as don't want to tamper with the original resource
-		if err != nil {
-			return nil, err
-		}
-		b, err := httputil.DumpRequestOut(&httpReq, true)
+		b, err := httputil.DumpRequestOut(req.HTTPRequest, true)
 
 		if err != nil {
 			return nil, err
-		}
-
-		if httpReq.Body != nil {
-			defer httpReq.Body.Close()
 		}
 
 		httpReqStr += string(b)
+		addHexaBodyByteNotations(&httpReqStr)
 	}
 
 	// Making the HTTP Response message block
 
 	httpRespStr := ""
 	if req.HTTPResponse != nil {
-		httpResp, err := addHexaResponseBodyByteNotations(req.HTTPResponse)
-		if err != nil {
-			return nil, err
-		}
-		b, err := httputil.DumpResponse(&httpResp, true)
+		b, err := httputil.DumpResponse(req.HTTPResponse, true)
 
 		if err != nil {
 			return nil, err
-		}
-
-		if httpResp.Body != nil {
-			defer httpResp.Body.Close()
 		}
 
 		httpRespStr += string(b)
+		addHexaBodyByteNotations(&httpRespStr)
 	}
 
 	if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
@@ -141,69 +124,4 @@ func DumpRequest(req *Request) ([]byte, error) {
 	fmt.Println(string(data))
 
 	return data, nil
-}
-
-// addHexaResponseBodyByteNotations adds body bytes Hexadecimal notations before and after body chunk and returns a new response
-// for example: for a body, "Hello World", this function adds
-// b
-// Hello World
-// 0
-func addHexaResponseBodyByteNotations(resp *http.Response) (http.Response, error) {
-
-	if resp.Body == nil {
-		return *resp, nil
-	}
-
-	r := http.Response(*resp) // creating a copy of the original response
-	buf := &bytes.Buffer{}
-
-	if _, err := io.Copy(buf, resp.Body); err != nil { // copying the original response body to the buffer
-		return r, err
-	}
-
-	resp.Body = ioutil.NopCloser(buf) // returning the body to the original response
-
-	bodyStr := buf.String()
-
-	bodyStr = fmt.Sprintf("%x\r\n", buf.Len()) + bodyStr + bodyEndIndicator // the byte length in Hexadecimal with a body and ending with \r\n0\r\n
-
-	newBodyByte := []byte(bodyStr)
-
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte)) // assigning the new body to the new response
-	r.ContentLength = int64(len(newBodyByte))               // adapting the content length according to the new byte length of the body
-
-	return r, nil
-
-}
-
-// addHexaRequestBodyByteNotations adds body bytes Hexadecimal notations before and after body chunk and returns a new request
-// for example: for a body, "Hello World", this function adds
-// b
-// Hello World
-// 0
-func addHexaRequestBodyByteNotations(req *http.Request) (http.Request, error) {
-	if req.Body == nil {
-		return *req, nil
-	}
-
-	newReq := http.Request(*req) // creating a copy of the original request
-	buf := &bytes.Buffer{}
-
-	if _, err := io.Copy(buf, req.Body); err != nil { // copying the original request body to the buffer
-		return newReq, err
-	}
-
-	req.Body = ioutil.NopCloser(buf) // returning the body to the original request
-
-	bodyStr := buf.String()
-
-	bodyStr = fmt.Sprintf("%x\r\n", buf.Len()) + bodyStr + bodyEndIndicator // the byte length in Hexadecimal with a body and ending with \r\n0\r\n
-
-	newBodyByte := []byte(bodyStr)
-
-	newReq.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyByte)) // assigning the new body to the new request
-	newReq.ContentLength = int64(len(newBodyByte))               // adapting the content length according to the new byte length of the body
-
-	return newReq, nil
-
 }

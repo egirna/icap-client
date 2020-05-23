@@ -92,6 +92,23 @@ func addFullBodyInPreviewIndicator(str string) string {
 	return str
 }
 
+func addHexaBodyByteNotations(str *string) {
+
+	if str == nil {
+		return
+	}
+
+	ss := strings.SplitN(*str, DoubleCRLF, 2)
+
+	if len(ss) < 2 || ss[1] == "" {
+		return
+	}
+
+	bodyBytes := []byte(ss[1])
+
+	*str = fmt.Sprintf("%s%s%x%s%s%s", ss[0], DoubleCRLF, len(bodyBytes), CRLF, ss[1], bodyEndIndicator)
+}
+
 func chunkBodyByBytes(bdyByte []byte, cl int) []byte {
 
 	newBytes := []byte{}
