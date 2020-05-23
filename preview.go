@@ -13,28 +13,33 @@ func (r *Request) SetPreview(maxBytes int) error {
 		return nil
 	}
 
-	bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
+	previewBytes := 0
 
-	if err != nil {
-		return err
-	}
+	if r.HTTPResponse.Body != nil {
+		bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
 
-	defer r.HTTPResponse.Body.Close()
+		if err != nil {
+			return err
+		}
 
-	previewBytes := len(bodyBytes)
-	r.bodyFittedInPreview = true
+		defer r.HTTPResponse.Body.Close()
 
-	if len(bodyBytes) > maxBytes {
-		previewBytes = maxBytes
-		r.bodyFittedInPreview = false
-		r.remainingPreviewBytes = bodyBytes[maxBytes:]
+		previewBytes = len(bodyBytes)
+		r.bodyFittedInPreview = true
+
+		if len(bodyBytes) > maxBytes {
+			previewBytes = maxBytes
+			r.bodyFittedInPreview = false
+			r.remainingPreviewBytes = bodyBytes[maxBytes:]
+		}
+
+		r.HTTPResponse.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
+
 	}
 
 	r.Header.Set("Preview", strconv.Itoa(previewBytes))
 	r.PreviewBytes = previewBytes
 	r.previewSet = true
-
-	r.HTTPResponse.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
 
 	return nil
 
