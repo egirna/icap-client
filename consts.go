@@ -28,6 +28,7 @@ const (
 	LF                              = "\n"
 	bodyEndIndicator                = CRLF + "0" + CRLF
 	fullBodyEndIndicatorPreviewMode = "; ieof" + DoubleCRLF
+	defaultChunkLength              = 512
 )
 
 // Common ICAP headers

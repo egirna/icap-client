@@ -58,7 +58,7 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 	chunkLength := req.ChunkLength
 
 	if chunkLength <= 0 {
-		chunkLength = 512
+		chunkLength = defaultChunkLength
 	}
 
 	data := chunkBodyByBytes(req.remainingPreviewBytes, chunkLength)
