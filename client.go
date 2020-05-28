@@ -39,7 +39,7 @@ func (c *Client) Do(req *Request) (*Response, error) {
 			return nil, err
 		}
 	} else {
-		d = []byte("RESPMOD /respmod-icapeg ICAP/1.0\nPreview: 64\nAllow: 204\nHost: Anondos-MacBook-Pro.local\nEncapsulated:  req-hdr=0, res-hdr=112, res-body=339\n\nGET /download/eicar.com HTTP/1.1\r\nHost: www.eicar.org\r\nUser-Agent: Go-http-client/1.1\r\nAccept-Encoding: gzip\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 68\r\nCache-Control: private\r\nContent-Disposition: attachment; filename=\"eicar.com\"\r\nContent-Type: application/octet-stream\r\nDate: Thu, 28 May 2020 13:01:55 GMT\r\nServer: Apache/2.4.10 (Debian)\r\n\r\n44\r\nX5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\r\n0; ieof\r\n\r\n")
+		d = []byte("RESPMOD /respmod-icapeg ICAP/1.0\nPreview: 64\nAllow: 204\nHost: Anondos-MacBook-Pro.local\nEncapsulated:  req-hdr=0, res-hdr=112, res-body=339\n\nGET /download/eicar.com HTTP/1.1\r\nHost: www.eicar.org\r\nUser-Agent: Go-http-client/1.1\r\nAccept-Encoding: gzip\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 68\r\nCache-Control: private\r\nContent-Disposition: attachment; filename=\"eicar.com\"\r\nContent-Type: application/octet-stream\r\nDate: Thu, 28 May 2020 13:01:55 GMT\r\nServer: Apache/2.4.10 (Debian)\r\n\r\n40\r\nX5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$\r\n0X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*")
 	}
 
 	fmt.Println(string(d))
