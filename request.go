@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Request represents the icap client request data
@@ -106,7 +108,12 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 
 		httpRespStr += string(b)
+
+		// if req.previewSet && !req.bodyFittedInPreview {
+		// 	chunkBodyInPreviewMode(&httpRespStr, req.PreviewBytes, req.ChunkLength, req.remainingPreviewBytes)
+		// } else {
 		addHexaBodyByteNotations(&httpRespStr)
+		// }
 	}
 
 	if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
@@ -121,6 +128,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
 
+	spew.Dump(string(data))
 	fmt.Println(string(data))
 
 	return data, nil

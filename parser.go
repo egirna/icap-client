@@ -109,6 +109,28 @@ func addHexaBodyByteNotations(str *string) {
 	*str = fmt.Sprintf("%s%s%x%s%s%s", ss[0], DoubleCRLF, len(bodyBytes), CRLF, ss[1], bodyEndIndicator)
 }
 
+func chunkBodyInPreviewMode(str *string, pb, cl int, rb []byte) {
+
+	ss := strings.SplitN(*str, DoubleCRLF, 2)
+
+	if len(ss) < 2 || ss[1] == "" {
+		return
+	}
+
+	bodyStr := ss[1]
+
+	bodyBytes := []byte(bodyStr)
+
+	previewPart := bodyBytes[:pb+1]
+	chunkedBodyStr := fmt.Sprintf("%x%s%s%s", pb, CRLF, string(previewPart), CRLF)
+
+	restChunkedBody := chunkBodyByBytes(rb, cl)
+	chunkedBodyStr += string(restChunkedBody)
+
+	*str = fmt.Sprintf("%s%s%s%s", ss[0], DoubleCRLF, chunkedBodyStr, CRLF+"0"+CRLF)
+
+}
+
 func chunkBodyByBytes(bdyByte []byte, cl int) []byte {
 
 	newBytes := []byte{}

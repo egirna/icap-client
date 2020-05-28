@@ -9,6 +9,10 @@ import (
 // SetPreview sets the preview bytes in the icap header
 func (r *Request) SetPreview(maxBytes int) error {
 
+	if r.ChunkLength < 1 {
+		r.ChunkLength = defaultChunkLength
+	}
+
 	if r.HTTPResponse == nil {
 		return nil
 	}
