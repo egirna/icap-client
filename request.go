@@ -94,11 +94,15 @@ func DumpRequest(req *Request) ([]byte, error) {
 		httpReqStr += string(b)
 
 		if req.previewSet {
-			keepPreviewBodyBytes(&httpReqStr, req.PreviewBytes)
+			parsePreviewBodyBytes(&httpReqStr, req.PreviewBytes)
 		}
 
 		if !bodyAlreadyChunked(httpReqStr) {
-			addHexaBodyByteNotations(&httpReqStr)
+			headerStr, bodyStr, ok := splitBodyAndHeader(httpReqStr)
+			if ok {
+				addHexaBodyByteNotations(&bodyStr)
+				mergeHeaderAndBody(&httpReqStr, headerStr, bodyStr)
+			}
 		}
 	}
 
@@ -115,11 +119,15 @@ func DumpRequest(req *Request) ([]byte, error) {
 		httpRespStr += string(b)
 
 		if req.previewSet {
-			keepPreviewBodyBytes(&httpRespStr, req.PreviewBytes)
+			parsePreviewBodyBytes(&httpRespStr, req.PreviewBytes)
 		}
 
 		if !bodyAlreadyChunked(httpRespStr) {
-			addHexaBodyByteNotations(&httpRespStr)
+			headerStr, bodyStr, ok := splitBodyAndHeader(httpRespStr)
+			if ok {
+				addHexaBodyByteNotations(&bodyStr)
+				mergeHeaderAndBody(&httpRespStr, headerStr, bodyStr)
+			}
 		}
 	}
 
