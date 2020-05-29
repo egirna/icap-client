@@ -92,7 +92,14 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 
 		httpReqStr += string(b)
-		addHexaBodyByteNotations(&httpReqStr)
+
+		if req.previewSet {
+			keepPreviewBodyBytes(&httpReqStr, req.PreviewBytes)
+		}
+
+		if !bodyAlreadyChunked(httpReqStr) {
+			addHexaBodyByteNotations(&httpReqStr)
+		}
 	}
 
 	// Making the HTTP Response message block
@@ -106,7 +113,14 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 
 		httpRespStr += string(b)
-		addHexaBodyByteNotations(&httpRespStr)
+
+		if req.previewSet {
+			keepPreviewBodyBytes(&httpRespStr, req.PreviewBytes)
+		}
+
+		if !bodyAlreadyChunked(httpRespStr) {
+			addHexaBodyByteNotations(&httpRespStr)
+		}
 	}
 
 	if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
@@ -120,8 +134,6 @@ func DumpRequest(req *Request) ([]byte, error) {
 	}
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
-
-	fmt.Println(string(data))
 
 	return data, nil
 }

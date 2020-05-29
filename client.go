@@ -55,13 +55,13 @@ func (c *Client) Do(req *Request) (*Response, error) {
 // DoRemaining requests an ICAP server with the remaining body bytes which did not fit in the preview in the original request
 func (c *Client) DoRemaining(req *Request) (*Response, error) {
 
-	chunkLength := req.ChunkLength
+	data := req.remainingPreviewBytes
 
-	if chunkLength <= 0 {
-		chunkLength = defaultChunkLength
+	if !bodyAlreadyChunked(string(data)) {
+		ds := string(data)
+		addHexaBodyByteNotations(&ds)
+		data = []byte(ds)
 	}
-
-	data := chunkBodyByBytes(req.remainingPreviewBytes, chunkLength)
 
 	if err := c.scktDriver.Send(data); err != nil {
 		return nil, err

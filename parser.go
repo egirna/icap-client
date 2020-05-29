@@ -92,6 +92,32 @@ func addFullBodyInPreviewIndicator(str string) string {
 	return str
 }
 
+func bodyAlreadyChunked(str string) bool {
+	ss := strings.SplitN(str, DoubleCRLF, 2)
+
+	if len(ss) < 2 || ss[1] == "" {
+		return false
+	}
+
+	bodyStr := ss[1]
+
+	return strings.Contains(bodyStr, bodyEndIndicator)
+}
+
+func keepPreviewBodyBytes(str *string, pb int) {
+
+	ss := strings.SplitN(*str, DoubleCRLF, 2)
+
+	if len(ss) < 2 || ss[1] == "" {
+		return
+	}
+
+	headerStr := ss[0]
+	bodyStr := ss[1][:pb]
+
+	*str = headerStr + DoubleCRLF + bodyStr
+}
+
 func addHexaBodyByteNotations(str *string) {
 
 	if str == nil {
@@ -104,9 +130,11 @@ func addHexaBodyByteNotations(str *string) {
 		return
 	}
 
-	bodyBytes := []byte(ss[1])
+	headerStr := ss[0]
+	bodyStr := ss[1]
+	bodyBytes := []byte(bodyStr)
 
-	*str = fmt.Sprintf("%s%s%x%s%s%s", ss[0], DoubleCRLF, len(bodyBytes), CRLF, ss[1], bodyEndIndicator)
+	*str = fmt.Sprintf("%s%s%x%s%s%s", headerStr, DoubleCRLF, len(bodyBytes), CRLF, bodyStr, bodyEndIndicator)
 }
 
 func chunkBodyByBytes(bdyByte []byte, cl int) []byte {
@@ -121,6 +149,8 @@ func chunkBodyByBytes(bdyByte []byte, cl int) []byte {
 
 		newBytes = append(newBytes, []byte(fmt.Sprintf("%x\r\n", len(bdyByte[i:end]))+string(bdyByte[i:end]))...)
 	}
+
+	newBytes = append(newBytes, []byte(bodyEndIndicator)...)
 
 	return newBytes
 }
