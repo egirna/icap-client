@@ -1,6 +1,7 @@
 package icapclient
 
 import (
+	"fmt"
 	"io"
 	"net"
 )
@@ -40,6 +41,8 @@ func (t *transport) read() (string, error) {
 
 		n, err := t.sckt.Read(tmp)
 
+		fmt.Println("The index: ", n)
+
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -48,7 +51,11 @@ func (t *transport) read() (string, error) {
 		}
 
 		data = append(data, tmp[:n]...)
-
+		fmt.Println("The data: ", string(data))
+		fmt.Println("truth: ", string(data) == "ICAP/1.0 100 Continue\r\n\r\n")
+		if string(data) == "ICAP/1.0 100 Continue\r\n\r\n" {
+			break
+		}
 	}
 
 	return string(data), nil

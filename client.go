@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Client represents the icap client who makes the icap server calls
@@ -39,7 +41,7 @@ func (c *Client) Do(req *Request) (*Response, error) {
 			return nil, err
 		}
 	} else {
-		d = []byte("RESPMOD /respmod-icapeg ICAP/1.0\nPreview: 64\nAllow: 204\nHost: Anondos-MacBook-Pro.local\nEncapsulated:  req-hdr=0, res-hdr=112, res-body=339\n\nGET /download/eicar.com HTTP/1.1\r\nHost: www.eicar.org\r\nUser-Agent: Go-http-client/1.1\r\nAccept-Encoding: gzip\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 68\r\nCache-Control: private\r\nContent-Disposition: attachment; filename=\"eicar.com\"\r\nContent-Type: application/octet-stream\r\nDate: Thu, 28 May 2020 13:01:55 GMT\r\nServer: Apache/2.4.10 (Debian)\r\n\r\n40\r\nX5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$\r\n0X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*")
+		d = []byte("RESPMOD /respmod-icapeg ICAP/1.0\nPreview: 64\nAllow: 204\nHost: Anondos-MacBook-Pro.local\nEncapsulated:  req-hdr=0, res-hdr=112, res-body=339\n\nGET /download/eicar.com HTTP/1.1\r\nHost: www.eicar.org\r\nUser-Agent: Go-http-client/1.1\r\nAccept-Encoding: gzip\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 68\r\nCache-Control: private\r\nContent-Disposition: attachment; filename=\"eicar.com\"\r\nContent-Type: application/octet-stream\r\nDate: Thu, 28 May 2020 13:01:55 GMT\r\nServer: Apache/2.4.10 (Debian)\r\n\r\n40\r\nX5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$\r\n0\r\n\r\n")
 	}
 
 	fmt.Println(string(d))
@@ -48,11 +50,19 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		return nil, err
 	}
 
+	fmt.Println("Data sent .........")
+
 	resp, err := c.scktDriver.Receive()
 
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Data received .....")
+
+	spew.Dump(resp.StatusCode)
+
+	spew.Dump(string(req.remainingPreviewBytes))
 
 	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview && req.previewSet {
 		return c.DoRemaining(req)
@@ -66,15 +76,22 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 
 	data := chunkBodyByBytes(req.remainingPreviewBytes, req.ChunkLength)
 
+	fmt.Println("chunked data")
+	spew.Dump(string(data))
+
 	if err := c.scktDriver.Send(data); err != nil {
 		return nil, err
 	}
+
+	fmt.Println("chunk sent ....")
 
 	resp, err := c.scktDriver.Receive()
 
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("final response received ...")
 
 	return resp, nil
 }
