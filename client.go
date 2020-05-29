@@ -59,7 +59,7 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 
 	if !bodyAlreadyChunked(string(data)) {
 		ds := string(data)
-		addHexaBodyByteNotations(&ds)
+		addHexaBodyByteNotations(&ds) // FIXME:  this expects there is also header in the message, but this is for body only, make addHexaBodyByteNotations just for body modifications and make seperate function for header and body split
 		data = []byte(ds)
 	}
 
