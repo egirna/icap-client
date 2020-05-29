@@ -135,10 +135,10 @@ func DumpRequest(req *Request) ([]byte, error) {
 		httpRespStr += CRLF
 	}
 
-	reqStr = setEncapsulatedHeaderValue(reqStr, httpReqStr, httpRespStr)
+	setEncapsulatedHeaderValue(&reqStr, httpReqStr, httpRespStr)
 
 	if req.previewSet && req.bodyFittedInPreview {
-		httpRespStr = addFullBodyInPreviewIndicator(httpRespStr)
+		addFullBodyInPreviewIndicator(&httpRespStr)
 	}
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)

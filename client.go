@@ -75,3 +75,8 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 
 	return resp, nil
 }
+
+// SetDriver sets a new socket driver with the client
+func (c *Client) SetDriver(d *Driver) {
+	c.scktDriver = d
+}

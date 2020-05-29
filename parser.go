@@ -42,10 +42,10 @@ func isRequestLine(str string) bool {
 }
 
 // setEncapsulatedHeaderValue generates the Encapsulated  values and assigns to the ICAP request string
-func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) string {
+func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr string) {
 	encpVal := " "
 
-	if strings.HasPrefix(icapReqStr, MethodOPTIONS) { // if the request method is OPTIONS
+	if strings.HasPrefix(*icapReqStr, MethodOPTIONS) { // if the request method is OPTIONS
 		if httpReqStr == "" && httpRespStr == "" { // the most common case for OPTIONS method, no Encapsulated body
 			encpVal += "null-body=0"
 		} else {
@@ -53,7 +53,7 @@ func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) stri
 		}
 	}
 
-	if strings.HasPrefix(icapReqStr, MethodREQMOD) || strings.HasPrefix(icapReqStr, MethodRESPMOD) { // if the request method is RESPMOD or REQMOD
+	if strings.HasPrefix(*icapReqStr, MethodREQMOD) || strings.HasPrefix(*icapReqStr, MethodRESPMOD) { // if the request method is RESPMOD or REQMOD
 		re := regexp.MustCompile(DoubleCRLF)                // looking for the match of the string \r\n\r\n, as that is the expression that seperates each blocks, i.e headers and bodies
 		reqIndices := re.FindAllStringIndex(httpReqStr, -1) // getting the offsets of the matches, tells us the starting/ending point of headers and bodies
 
@@ -83,13 +83,12 @@ func setEncapsulatedHeaderValue(icapReqStr, httpReqStr, httpRespStr string) stri
 
 	}
 
-	return fmt.Sprintf(icapReqStr, encpVal) // formatting the ICAP request Encapsulated header with the value
+	*icapReqStr = fmt.Sprintf(*icapReqStr, encpVal) // formatting the ICAP request Encapsulated header with the value
 }
 
-func addFullBodyInPreviewIndicator(str string) string {
-	str = strings.TrimSuffix(str, DoubleCRLF)
-	str += fullBodyEndIndicatorPreviewMode
-	return str
+func addFullBodyInPreviewIndicator(str *string) {
+	*str = strings.TrimSuffix(*str, DoubleCRLF)
+	*str += fullBodyEndIndicatorPreviewMode
 }
 
 func splitBodyAndHeader(str string) (string, string, bool) {
