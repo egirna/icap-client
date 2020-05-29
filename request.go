@@ -28,17 +28,9 @@ func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Res
 
 	method = strings.ToUpper(method)
 
-	if valid, err := validMethod(method); !valid {
-		return nil, err
-	}
-
 	u, err := url.Parse(urlStr)
 
 	if err != nil {
-		return nil, err
-	}
-
-	if valid, err := validURL(u); !valid {
 		return nil, err
 	}
 
@@ -48,6 +40,10 @@ func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Res
 		Header:       make(map[string][]string),
 		HTTPRequest:  httpReq,
 		HTTPResponse: httpResp,
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, err
 	}
 
 	return req, nil

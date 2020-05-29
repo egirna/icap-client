@@ -14,6 +14,9 @@ const (
 	ErrInvalidHost         = "the requested host is invalid"
 	ErrConnectionNotOpen   = "no open connection to close"
 	ErrInvalidTCPMsg       = "invalid tcp message"
+	ErrREQMODWithNoReq     = "http request cannot be nil for method REQMOD"
+	ErrREQMODWithResp      = "http response must be nil for method REQMOD"
+	ErrRESPMODWithNoResp   = "http response cannot be nil for method RESPMOD"
 )
 
 // general constants required for the package
