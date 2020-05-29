@@ -9,32 +9,61 @@ import (
 // SetPreview sets the preview bytes in the icap header
 func (r *Request) SetPreview(maxBytes int) error {
 
-	if r.HTTPResponse == nil {
-		return nil
-	}
+	bodyBytes := []byte{}
 
 	previewBytes := 0
 
-	if r.HTTPResponse.Body != nil {
-		bodyBytes, err := ioutil.ReadAll(r.HTTPResponse.Body)
+	if r.Method == MethodREQMOD {
+		if r.HTTPRequest == nil {
+			return nil
+		}
+		if r.HTTPRequest.Body != nil {
+			var err error
+			bodyBytes, err = ioutil.ReadAll(r.HTTPRequest.Body)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+
+			defer r.HTTPRequest.Body.Close()
+		}
+	}
+
+	if r.Method == MethodRESPMOD {
+		if r.HTTPResponse == nil {
+			return nil
 		}
 
-		defer r.HTTPResponse.Body.Close()
+		if r.HTTPResponse.Body != nil {
+			var err error
+			bodyBytes, err = ioutil.ReadAll(r.HTTPResponse.Body)
 
-		previewBytes = len(bodyBytes)
+			if err != nil {
+				return err
+			}
+
+			defer r.HTTPResponse.Body.Close()
+		}
+	}
+
+	previewBytes = len(bodyBytes)
+
+	if previewBytes > 0 {
 		r.bodyFittedInPreview = true
+	}
 
-		if len(bodyBytes) > maxBytes {
-			previewBytes = maxBytes
-			r.bodyFittedInPreview = false
-			r.remainingPreviewBytes = bodyBytes[maxBytes:]
-		}
+	if previewBytes > maxBytes {
+		previewBytes = maxBytes
+		r.bodyFittedInPreview = false
+		r.remainingPreviewBytes = bodyBytes[maxBytes:]
+	}
 
+	if r.Method == MethodREQMOD {
+		r.HTTPRequest.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
+	}
+
+	if r.Method == MethodRESPMOD {
 		r.HTTPResponse.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
-
 	}
 
 	r.Header.Set("Preview", strconv.Itoa(previewBytes))

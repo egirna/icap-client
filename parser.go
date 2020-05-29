@@ -67,7 +67,9 @@ func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr stri
 			} else if httpRespStr == "" {
 				encpVal += fmt.Sprintf(", null-body=%d", reqIndices[0][1])
 			}
-			encpVal += ", "
+			if httpRespStr != "" {
+				encpVal += ", "
+			}
 		}
 
 		respIndices := re.FindAllStringIndex(httpRespStr, -1)
@@ -84,6 +86,10 @@ func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr stri
 	}
 
 	*icapReqStr = fmt.Sprintf(*icapReqStr, encpVal) // formatting the ICAP request Encapsulated header with the value
+}
+
+func replaceRequestURIWithActualURL(str *string, uri, url string) {
+	*str = strings.Replace(*str, uri, url, 1)
 }
 
 func addFullBodyInPreviewIndicator(str *string) {

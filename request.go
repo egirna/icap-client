@@ -70,7 +70,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	// Making the ICAP message block
 
-	reqStr := fmt.Sprintf("%s %s %s\n", req.Method, req.URL.RequestURI(), ICAPVersion)
+	reqStr := fmt.Sprintf("%s %s %s\n", req.Method, req.URL.String(), ICAPVersion)
 
 	for headerName, vals := range req.Header {
 		for _, val := range vals {
@@ -92,18 +92,27 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 
 		httpReqStr += string(b)
+		replaceRequestURIWithActualURL(&httpReqStr, req.HTTPRequest.URL.EscapedPath(), req.HTTPRequest.URL.String())
 
-		if req.previewSet {
-			parsePreviewBodyBytes(&httpReqStr, req.PreviewBytes)
-		}
-
-		if !bodyAlreadyChunked(httpReqStr) {
-			headerStr, bodyStr, ok := splitBodyAndHeader(httpReqStr)
-			if ok {
-				addHexaBodyByteNotations(&bodyStr)
-				mergeHeaderAndBody(&httpReqStr, headerStr, bodyStr)
+		if req.Method == MethodREQMOD {
+			if req.previewSet {
+				parsePreviewBodyBytes(&httpReqStr, req.PreviewBytes)
 			}
+
+			if !bodyAlreadyChunked(httpReqStr) {
+				headerStr, bodyStr, ok := splitBodyAndHeader(httpReqStr)
+				if ok {
+					addHexaBodyByteNotations(&bodyStr)
+					mergeHeaderAndBody(&httpReqStr, headerStr, bodyStr)
+				}
+			}
+
+			if httpReqStr != "" && !strings.HasSuffix(httpReqStr, DoubleCRLF) { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+				httpReqStr += CRLF
+			}
+
 		}
+
 	}
 
 	// Making the HTTP Response message block
@@ -129,16 +138,21 @@ func DumpRequest(req *Request) ([]byte, error) {
 				mergeHeaderAndBody(&httpRespStr, headerStr, bodyStr)
 			}
 		}
-	}
 
-	if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
-		httpRespStr += CRLF
+		if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+			httpRespStr += CRLF
+		}
+
 	}
 
 	setEncapsulatedHeaderValue(&reqStr, httpReqStr, httpRespStr)
 
-	if req.previewSet && req.bodyFittedInPreview {
+	if httpRespStr != "" && req.previewSet && req.bodyFittedInPreview {
 		addFullBodyInPreviewIndicator(&httpRespStr)
+	}
+
+	if req.Method == MethodREQMOD && req.previewSet && req.bodyFittedInPreview {
+		addFullBodyInPreviewIndicator(&httpReqStr)
 	}
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
