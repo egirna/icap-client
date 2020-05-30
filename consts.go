@@ -40,6 +40,7 @@ const (
 	PreviewHeader          = "Preview"
 	MethodsHeader          = "Methods"
 	AllowHeader            = "Allow"
+	EncapsulatedHeader     = "Encapsulated"
 	TransferPreviewHeader  = "Transfer-Preview"
 	ServiceHeader          = "Service"
 	ISTagHeader            = "ISTag"

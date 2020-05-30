@@ -3,6 +3,8 @@ package icapclient
 import (
 	"bytes"
 	"io/ioutil"
+	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -72,4 +74,45 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 	return nil
 
+}
+
+// SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
+func (r *Request) SetDefaultRequestHeaders() {
+	if _, exists := r.Header["Allow"]; !exists {
+		r.Header.Add("Allow", "204") // assigning 204 by default if Allow not provided
+	}
+	if _, exists := r.Header["Host"]; !exists {
+		hostName, _ := os.Hostname()
+		r.Header.Add("Host", hostName)
+	}
+}
+
+// ExtendHeader extends the current ICAP Request header with a new header
+func (r *Request) ExtendHeader(hdr http.Header) error {
+	for header, values := range hdr {
+
+		if header == PreviewHeader && r.previewSet {
+			continue
+		}
+
+		if header == EncapsulatedHeader {
+			continue
+		}
+
+		for _, value := range values {
+			if header == PreviewHeader {
+				pb, err := strconv.Atoi(value)
+				if err != nil {
+					return err
+				}
+				if err := r.SetPreview(pb); err != nil {
+					return err
+				}
+				continue
+			}
+			r.Header.Add(header, value)
+		}
+	}
+
+	return nil
 }

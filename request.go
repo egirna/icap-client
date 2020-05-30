@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -49,33 +48,22 @@ func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Res
 	return req, nil
 }
 
-// SetDefaultRequestHeaders assigns some of the headers with its default value if they are not set already
-func (r *Request) SetDefaultRequestHeaders() {
-	if _, exists := r.Header["Allow"]; !exists {
-		r.Header.Add("Allow", "204") // assigning 204 by default if Allow not provided
-	}
-	if _, exists := r.Header["Host"]; !exists {
-		hostName, _ := os.Hostname()
-		r.Header.Add("Host", hostName)
-	}
-}
-
 // DumpRequest returns the given request in its ICAP/1.x wire
 // representation.
 func DumpRequest(req *Request) ([]byte, error) {
 
 	// Making the ICAP message block
 
-	reqStr := fmt.Sprintf("%s %s %s\n", req.Method, req.URL.String(), ICAPVersion)
+	reqStr := fmt.Sprintf("%s %s %s%s", req.Method, req.URL.String(), ICAPVersion, CRLF)
 
 	for headerName, vals := range req.Header {
 		for _, val := range vals {
-			reqStr += fmt.Sprintf("%s: %s\n", headerName, val)
+			reqStr += fmt.Sprintf("%s: %s%s", headerName, val, CRLF)
 		}
 	}
 
-	reqStr += "Encapsulated: %s\n" // will populate the Encapsulated header value after making the http Request & Response messages
-	reqStr += LF
+	reqStr += "Encapsulated: %s" + CRLF // will populate the Encapsulated header value after making the http Request & Response messages
+	reqStr += CRLF
 
 	// Making the HTTP Request message block
 
