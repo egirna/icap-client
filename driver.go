@@ -2,16 +2,21 @@ package icapclient
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Driver os the one responsible for driving the transport layer operations
 type Driver struct {
-	Host string
-	Port int
-	tcp  *transport
+	Host          string
+	Port          int
+	DialerTimeout time.Duration
+	ReadTimeout   time.Duration
+	WriteTimeout  time.Duration
+	tcp           *transport
 }
 
 // NewDriver is the factory function for Driver
@@ -26,11 +31,27 @@ func NewDriver(host string, port int) *Driver {
 func (d *Driver) Connect() error {
 
 	d.tcp = &transport{
-		network: "tcp",
-		addr:    fmt.Sprintf("%s:%d", d.Host, d.Port),
+		network:      "tcp",
+		addr:         fmt.Sprintf("%s:%d", d.Host, d.Port),
+		timeout:      d.DialerTimeout,
+		readTimeout:  d.ReadTimeout,
+		writeTimeout: d.WriteTimeout,
 	}
 
 	return d.tcp.dial()
+}
+
+// ConnectWithContext connects to the server satisfying the context
+func (d *Driver) ConnectWithContext(ctx context.Context) error {
+	d.tcp = &transport{
+		network:      "tcp",
+		addr:         fmt.Sprintf("%s:%d", d.Host, d.Port),
+		timeout:      d.DialerTimeout,
+		readTimeout:  d.ReadTimeout,
+		writeTimeout: d.WriteTimeout,
+	}
+
+	return d.tcp.dialWithContext(ctx)
 }
 
 // Close closes the socket connection

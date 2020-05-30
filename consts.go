@@ -1,5 +1,7 @@
 package icapclient
 
+import "time"
+
 // the icap request methods
 const (
 	MethodOPTIONS = "OPTIONS"
@@ -31,8 +33,9 @@ const (
 	LF                              = "\n"
 	bodyEndIndicator                = CRLF + "0" + CRLF
 	fullBodyEndIndicatorPreviewMode = "; ieof" + DoubleCRLF
-	defaultChunkLength              = 512
 	icap100ContinueMsg              = "ICAP/1.0 100 Continue" + DoubleCRLF
+	defaultChunkLength              = 512
+	defaultTimeout                  = 15 * time.Second
 )
 
 // Common ICAP headers

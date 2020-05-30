@@ -1,6 +1,7 @@
 package icapclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -17,6 +18,7 @@ type Request struct {
 	HTTPResponse          *http.Response
 	ChunkLength           int
 	PreviewBytes          int
+	ctx                   *context.Context
 	previewSet            bool
 	bodyFittedInPreview   bool
 	remainingPreviewBytes []byte
@@ -142,4 +144,9 @@ func DumpRequest(req *Request) ([]byte, error) {
 	data := []byte(reqStr + httpReqStr + httpRespStr)
 
 	return data, nil
+}
+
+// SetContext sets a context for the ICAP request
+func (r *Request) SetContext(ctx context.Context) { // TODO: make context take control over the whole operation
+	r.ctx = &ctx
 }

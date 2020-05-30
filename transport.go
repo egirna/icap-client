@@ -1,22 +1,58 @@
 package icapclient
 
 import (
+	"context"
 	"io"
 	"net"
+	"time"
 )
 
 // transport represents the transport layer data
 type transport struct {
-	network string
-	addr    string
-	sckt    net.Conn
+	network      string
+	addr         string
+	timeout      time.Duration
+	readTimeout  time.Duration
+	writeTimeout time.Duration
+	sckt         net.Conn
 }
 
-// Dial fires up a tcp socket
+// dial fires up a tcp socket
 func (t *transport) dial() error {
-	sckt, err := net.Dial(t.network, t.addr)
+	sckt, err := net.DialTimeout(t.network, t.addr, t.timeout)
 
 	if err != nil {
+		return err
+	}
+
+	if err := sckt.SetReadDeadline(time.Now().UTC().Add(t.readTimeout)); err != nil {
+		return err
+	}
+
+	if err := sckt.SetWriteDeadline(time.Now().UTC().Add(t.writeTimeout)); err != nil {
+		return err
+	}
+
+	t.sckt = sckt
+
+	return nil
+}
+
+// dialWithContext fires up a tcp socket
+func (t *transport) dialWithContext(ctx context.Context) error {
+	sckt, err := (&net.Dialer{
+		Timeout: t.timeout,
+	}).DialContext(ctx, t.network, t.addr)
+
+	if err != nil {
+		return err
+	}
+
+	if err := sckt.SetReadDeadline(time.Now().UTC().Add(t.readTimeout)); err != nil {
+		return err
+	}
+
+	if err := sckt.SetWriteDeadline(time.Now().UTC().Add(t.writeTimeout)); err != nil {
 		return err
 	}
 

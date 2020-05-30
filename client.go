@@ -3,11 +3,13 @@ package icapclient
 import (
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // Client represents the icap client who makes the icap server calls
 type Client struct {
 	scktDriver *Driver
+	Timeout    time.Duration
 }
 
 // Do makes the call
@@ -19,10 +21,20 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		return nil, err
 	}
 
-	c.scktDriver = NewDriver(req.URL.Hostname(), port)
+	if c.scktDriver == nil {
+		c.scktDriver = NewDriver(req.URL.Hostname(), port)
+	}
 
-	if err := c.scktDriver.Connect(); err != nil {
-		return nil, err
+	c.setDefaultTimeouts()
+
+	if req.ctx != nil {
+		if err := c.scktDriver.ConnectWithContext(*req.ctx); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := c.scktDriver.Connect(); err != nil {
+			return nil, err
+		}
 	}
 
 	defer c.scktDriver.Close()
@@ -79,4 +91,22 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 // SetDriver sets a new socket driver with the client
 func (c *Client) SetDriver(d *Driver) {
 	c.scktDriver = d
+}
+
+func (c *Client) setDefaultTimeouts() {
+	if c.Timeout == 0 {
+		c.Timeout = defaultTimeout
+	}
+
+	if c.scktDriver.DialerTimeout == 0 {
+		c.scktDriver.DialerTimeout = c.Timeout
+	}
+
+	if c.scktDriver.ReadTimeout == 0 {
+		c.scktDriver.ReadTimeout = c.Timeout
+	}
+
+	if c.scktDriver.WriteTimeout == 0 {
+		c.scktDriver.WriteTimeout = c.Timeout
+	}
 }
