@@ -12,22 +12,21 @@ type Client struct {
 	Timeout    time.Duration
 }
 
-// Do makes the call
+// Do makes  does everything required to make a call to the ICAP server
 func (c *Client) Do(req *Request) (*Response, error) {
 
-	port, err := strconv.Atoi(req.URL.Port())
+	if c.scktDriver == nil { // create a new socket driver if one wasn't explicitly created
+		port, err := strconv.Atoi(req.URL.Port())
 
-	if err != nil {
-		return nil, err
-	}
-
-	if c.scktDriver == nil {
+		if err != nil {
+			return nil, err
+		}
 		c.scktDriver = NewDriver(req.URL.Hostname(), port)
 	}
 
-	c.setDefaultTimeouts()
+	c.setDefaultTimeouts() // assinging default timeouts if not set already
 
-	if req.ctx != nil {
+	if req.ctx != nil { // connect with the given context if context is set
 		if err := c.scktDriver.ConnectWithContext(*req.ctx); err != nil {
 			return nil, err
 		}
@@ -37,27 +36,27 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		}
 	}
 
-	defer c.scktDriver.Close()
+	defer c.scktDriver.Close() // closing the socket connection
 
-	req.SetDefaultRequestHeaders()
+	req.SetDefaultRequestHeaders() // assigning default headers if not set already
 
-	d, err := DumpRequest(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.scktDriver.Send(d); err != nil {
-		return nil, err
-	}
-
-	resp, err := c.scktDriver.Receive()
+	d, err := DumpRequest(req) // getting the byte representation of the ICAP request
 
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview && req.previewSet {
+	if err := c.scktDriver.Send(d); err != nil { // sending the entire TCP message of the ICAP client to the server connected
+		return nil, err
+	}
+
+	resp, err := c.scktDriver.Receive() // taking the response
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview && req.previewSet { // this block suggests that the ICAP request contained preview body bytes and whole body did not fit in the preview, so the serber responded with 100 Continue and the client is to send the remaining body bytes only
 		return c.DoRemaining(req)
 	}
 
@@ -69,7 +68,7 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 
 	data := req.remainingPreviewBytes
 
-	if !bodyAlreadyChunked(string(data)) {
+	if !bodyAlreadyChunked(string(data)) { // if the body is not already chunke, then add the basic hexa body bytes notation
 		ds := string(data)
 		addHexaBodyByteNotations(&ds)
 		data = []byte(ds)

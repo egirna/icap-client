@@ -93,6 +93,7 @@ func (t *transport) read() (string, error) {
 	return string(data), nil
 }
 
+// close closes the tcp connection
 func (t *transport) close() error {
 	return t.sckt.Close()
 }

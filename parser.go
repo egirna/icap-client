@@ -88,15 +88,18 @@ func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr stri
 	*icapReqStr = fmt.Sprintf(*icapReqStr, encpVal) // formatting the ICAP request Encapsulated header with the value
 }
 
+// replaceRequestURIWithActualURL replaces the just the escaped portion of the url with the entire URL in the dumped request message
 func replaceRequestURIWithActualURL(str *string, uri, url string) {
 	*str = strings.Replace(*str, uri, url, 1)
 }
 
+// addFullBodyInPreviewIndicator adds 0; ieof\r\n\r\n which indicates the entire body fitted in preview
 func addFullBodyInPreviewIndicator(str *string) {
 	*str = strings.TrimSuffix(*str, DoubleCRLF)
 	*str += fullBodyEndIndicatorPreviewMode
 }
 
+// splitBodyAndHeader separates header and body from a http message
 func splitBodyAndHeader(str string) (string, string, bool) {
 	ss := strings.SplitN(str, DoubleCRLF, 2)
 
@@ -110,6 +113,7 @@ func splitBodyAndHeader(str string) (string, string, bool) {
 	return headerStr, bodyStr, true
 }
 
+// bodyAlreadyChunked determines if the http body is already chunked from the origin server or not
 func bodyAlreadyChunked(str string) bool {
 	_, bodyStr, ok := splitBodyAndHeader(str)
 
@@ -120,6 +124,7 @@ func bodyAlreadyChunked(str string) bool {
 	return strings.Contains(bodyStr, bodyEndIndicator)
 }
 
+// parsePreviewBodyBytes parses the preview portion of the body and only keeps that in the message
 func parsePreviewBodyBytes(str *string, pb int) {
 
 	headerStr, bodyStr, ok := splitBodyAndHeader(*str)
@@ -133,6 +138,11 @@ func parsePreviewBodyBytes(str *string, pb int) {
 	*str = headerStr + DoubleCRLF + bodyStr
 }
 
+// addHexaBodyByteNotations adds the hexadecimal byte notaions in the messages
+// for example: Hello World, becomes
+// b
+// Hello World
+// 0
 func addHexaBodyByteNotations(bodyStr *string) {
 
 	bodyBytes := []byte(*bodyStr)
@@ -140,6 +150,7 @@ func addHexaBodyByteNotations(bodyStr *string) {
 	*bodyStr = fmt.Sprintf("%x%s%s%s", len(bodyBytes), CRLF, *bodyStr, bodyEndIndicator)
 }
 
+// mergeHeaderAndBody merges the header and body of the http message togather
 func mergeHeaderAndBody(src *string, headerStr, bodyStr string) {
 	*src = headerStr + DoubleCRLF + bodyStr
 }

@@ -15,6 +15,8 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 	previewBytes := 0
 
+	// receiving the body bites to determine the preview bytes depending on the request ICAP method
+
 	if r.Method == MethodREQMOD {
 		if r.HTTPRequest == nil {
 			return nil
@@ -50,15 +52,17 @@ func (r *Request) SetPreview(maxBytes int) error {
 
 	previewBytes = len(bodyBytes)
 
-	if previewBytes > 0 {
+	if previewBytes > 0 { // if the preview byte is 0 or less, there is no question of the body fitting insides
 		r.bodyFittedInPreview = true
 	}
 
-	if previewBytes > maxBytes {
+	if previewBytes > maxBytes { // if the preview bytes is greater than what was mentioned by the ICAP Server(did not fit in the body)
 		previewBytes = maxBytes
 		r.bodyFittedInPreview = false
-		r.remainingPreviewBytes = bodyBytes[maxBytes:]
+		r.remainingPreviewBytes = bodyBytes[maxBytes:] // storing the rest of the body byte which were not sent as preview for further operations
 	}
+
+	// returning the body back to the http message depending on the request method
 
 	if r.Method == MethodREQMOD {
 		r.HTTPRequest.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
@@ -67,6 +71,8 @@ func (r *Request) SetPreview(maxBytes int) error {
 	if r.Method == MethodRESPMOD {
 		r.HTTPResponse.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
 	}
+
+	// finally assinging the preview informations including setting the header
 
 	r.Header.Set("Preview", strconv.Itoa(previewBytes))
 	r.PreviewBytes = previewBytes

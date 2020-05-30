@@ -6,6 +6,7 @@ import (
 	"net/url"
 )
 
+// validMethod validates the ICAP method
 func validMethod(method string) (bool, error) {
 	if _, registered := registeredMethods[method]; !registered {
 		return false, errors.New(ErrMethodNotRegistered)
@@ -14,6 +15,7 @@ func validMethod(method string) (bool, error) {
 	return true, nil
 }
 
+// validURL validates the Server URL provided
 func validURL(url *url.URL) (bool, error) {
 
 	if url.Scheme != SchemeICAP {
@@ -27,6 +29,7 @@ func validURL(url *url.URL) (bool, error) {
 	return true, nil
 }
 
+// validMethodWithHTTP validates if the ICAP request method and the http messages are alligned or not
 func validMethodWithHTTP(httpReq *http.Request, httpResp *http.Response, method string) (bool, error) {
 	if method == MethodREQMOD && httpReq == nil {
 		return false, errors.New(ErrREQMODWithNoReq)

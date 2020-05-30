@@ -131,8 +131,10 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	}
 
+	//populating the Encapsulated header of the ICAP message portion
 	setEncapsulatedHeaderValue(&reqStr, httpReqStr, httpRespStr)
 
+	// determining if the http message needs the full body fitted in the preview portion indicator or not
 	if httpRespStr != "" && req.previewSet && req.bodyFittedInPreview {
 		addFullBodyInPreviewIndicator(&httpRespStr)
 	}
