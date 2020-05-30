@@ -1,7 +1,6 @@
 package icapclient
 
 import (
-	"bytes"
 	"net/http"
 	"testing"
 )
@@ -31,8 +30,7 @@ func TestRequest(t *testing.T) {
 
 	t.Run("DumpRequest", func(t *testing.T) {
 
-		httpReq, _ := http.NewRequest(http.MethodGet, "http://something.com/somewhere", bytes.NewBuffer([]byte(`Hello World`)))
-		req, _ := NewRequest(MethodOPTIONS, "icap://localhost:1344/something", httpReq, nil)
+		req, _ := NewRequest(MethodOPTIONS, "icap://localhost:1344/something", nil, nil)
 
 		b, err := DumpRequest(req)
 
@@ -40,13 +38,8 @@ func TestRequest(t *testing.T) {
 			t.Fatal(err.Error())
 		}
 
-		wanted := "OPTIONS /something ICAP/1.0\n\n" +
-			"GET /somewhere HTTP/1.1\r\n" +
-			"Host: something.com\r\n" +
-			"User-Agent: Go-http-client/1.1\r\n" +
-			"Content-Length: 11\r\n" +
-			"Accept-Encoding: gzip\r\n\r\n" +
-			"Hello World"
+		wanted := "OPTIONS icap://localhost:1344/something ICAP/1.0\r\n" +
+			"Encapsulated:  null-body=0\r\n\r\n"
 
 		got := string(b)
 
