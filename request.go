@@ -7,6 +7,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Request represents the icap client request data
@@ -144,6 +146,12 @@ func DumpRequest(req *Request) ([]byte, error) {
 	}
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
+
+	fmt.Println("The data being sent")
+	fmt.Println(string(data))
+
+	fmt.Println("The raw data")
+	spew.Dump(string(data))
 
 	return data, nil
 }

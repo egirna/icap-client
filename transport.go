@@ -2,9 +2,12 @@ package icapclient
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // transport represents the transport layer data
@@ -71,6 +74,8 @@ func (t *transport) read() (string, error) {
 
 	data := make([]byte, 0)
 
+	fmt.Println("Dumping messages...")
+
 	for {
 		tmp := make([]byte, 1096)
 
@@ -78,6 +83,7 @@ func (t *transport) read() (string, error) {
 
 		if err != nil {
 			if err == io.EOF {
+				fmt.Println("End of file from message")
 				break
 			}
 			return "", err
@@ -87,6 +93,8 @@ func (t *transport) read() (string, error) {
 		if string(data) == icap100ContinueMsg { // explicitly breaking because the Read blocks for 100 continue message // TODO: find out why
 			break
 		}
+
+		spew.Dump(data)
 
 	}
 
