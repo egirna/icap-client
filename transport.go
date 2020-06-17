@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -100,6 +101,11 @@ func (t *transport) read() (string, error) {
 		}
 
 		spew.Dump(data)
+
+		if strings.HasSuffix(string(data), "0\r\n\r\n") {
+			fmt.Println("End of the file by 0 crlf crlf")
+			break
+		}
 
 	}
 
