@@ -89,6 +89,11 @@ func (t *transport) read() (string, error) {
 			return "", err
 		}
 
+		if n == 0 {
+			fmt.Println("End of file by byte")
+			break
+		}
+
 		data = append(data, tmp[:n]...)
 		if string(data) == icap100ContinueMsg { // explicitly breaking because the Read blocks for 100 continue message // TODO: find out why
 			break
