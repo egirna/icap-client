@@ -107,6 +107,11 @@ func (t *transport) read() (string, error) {
 			break
 		}
 
+		if strings.HasPrefix(string(data), icap204NoModsMsg) && strings.HasSuffix(string(data), DoubleCRLF) {
+			fmt.Println("End of file by no mods")
+			break
+		}
+
 	}
 
 	return string(data), nil
