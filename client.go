@@ -1,9 +1,12 @@
 package icapclient
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Client represents the icap client who makes the icap server calls
@@ -39,6 +42,11 @@ func (c *Client) Do(req *Request) (*Response, error) {
 	defer c.scktDriver.Close() // closing the socket connection
 
 	req.SetDefaultRequestHeaders() // assigning default headers if not set already
+
+	if DEBUG {
+		log.Println("The request headers: ")
+		spew.Dump(req.Header)
+	}
 
 	d, err := DumpRequest(req) // getting the byte representation of the ICAP request
 

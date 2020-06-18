@@ -2,9 +2,10 @@ package icapclient
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"log"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -74,7 +75,9 @@ func (t *transport) read() (string, error) {
 
 	data := make([]byte, 0)
 
-	fmt.Println("Dumping messages...")
+	if DEBUG {
+		log.Println("Dumping messages received from the socket...")
+	}
 
 	for {
 		tmp := make([]byte, 1096)
@@ -83,10 +86,19 @@ func (t *transport) read() (string, error) {
 
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println("End of file from message")
+				if DEBUG {
+					log.Println("End of file detected from EOF error")
+				}
 				break
 			}
 			return "", err
+		}
+
+		if n == 0 {
+			if DEBUG {
+				log.Println("End of file detected by 0 bytes")
+			}
+			break
 		}
 
 		data = append(data, tmp[:n]...)
@@ -94,7 +106,23 @@ func (t *transport) read() (string, error) {
 			break
 		}
 
-		spew.Dump(data)
+		if DEBUG {
+			spew.Dump(data)
+		}
+
+		if strings.HasSuffix(string(data), "0\r\n\r\n") {
+			if DEBUG {
+				log.Println("End of the file detected by 0 Double CRLF indicator")
+			}
+			break
+		}
+
+		if strings.HasPrefix(string(data), icap204NoModsMsg) && strings.HasSuffix(string(data), DoubleCRLF) {
+			if DEBUG {
+				log.Println("End of file detected by 204 no modifications and Double CRLF at the end")
+			}
+			break
+		}
 
 	}
 

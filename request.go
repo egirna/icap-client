@@ -3,6 +3,7 @@ package icapclient
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -147,11 +148,13 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
 
-	fmt.Println("The data being sent")
-	fmt.Println(string(data))
+	if DEBUG {
+		log.Println("The data being sent")
+		log.Println(string(data))
 
-	fmt.Println("The raw data")
-	spew.Dump(string(data))
+		fmt.Println("The dump of the data being sent")
+		spew.Dump(string(data))
+	}
 
 	return data, nil
 }
