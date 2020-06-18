@@ -3,13 +3,10 @@ package icapclient
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // Request represents the icap client request data
@@ -134,8 +131,12 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 	}
 
-	//populating the Encapsulated header of the ICAP message portion
-	setEncapsulatedHeaderValue(&reqStr, httpReqStr, httpRespStr)
+	if encpVal := req.Header.Get(EncapsulatedHeader); encpVal != "" {
+		reqStr = fmt.Sprintf(reqStr, encpVal)
+	} else {
+		//populating the Encapsulated header of the ICAP message portion
+		setEncapsulatedHeaderValue(&reqStr, httpReqStr, httpRespStr)
+	}
 
 	// determining if the http message needs the full body fitted in the preview portion indicator or not
 	if httpRespStr != "" && req.previewSet && req.bodyFittedInPreview {
@@ -147,14 +148,6 @@ func DumpRequest(req *Request) ([]byte, error) {
 	}
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
-
-	if DEBUG {
-		log.Println("The data being sent")
-		log.Println(string(data))
-
-		fmt.Println("The dump of the data being sent")
-		spew.Dump(string(data))
-	}
 
 	return data, nil
 }

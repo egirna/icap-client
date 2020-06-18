@@ -121,7 +121,7 @@ func bodyAlreadyChunked(str string) bool {
 		return false
 	}
 
-	return strings.Contains(bodyStr, bodyEndIndicator)
+	return strings.HasSuffix(bodyStr, bodyEndIndicator)
 }
 
 // parsePreviewBodyBytes parses the preview portion of the body and only keeps that in the message
