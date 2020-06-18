@@ -101,6 +101,11 @@ func (t *transport) read() (string, error) {
 			break
 		}
 
+		data = append(data, tmp[:n]...)
+		if string(data) == icap100ContinueMsg { // explicitly breaking because the Read blocks for 100 continue message // TODO: find out why
+			break
+		}
+
 		if strings.HasSuffix(string(data), "0\r\n\r\n") {
 			if DEBUG {
 				log.Println("End of the file detected by 0 Double CRLF indicator")
@@ -112,11 +117,6 @@ func (t *transport) read() (string, error) {
 			if DEBUG {
 				log.Println("End of file detected by 204 no modifications and Double CRLF at the end")
 			}
-			break
-		}
-
-		data = append(data, tmp[:n]...)
-		if string(data) == icap100ContinueMsg { // explicitly breaking because the Read blocks for 100 continue message // TODO: find out why
 			break
 		}
 
