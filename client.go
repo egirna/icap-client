@@ -1,12 +1,9 @@
 package icapclient
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // Client represents the icap client who makes the icap server calls
@@ -43,10 +40,8 @@ func (c *Client) Do(req *Request) (*Response, error) {
 
 	req.SetDefaultRequestHeaders() // assigning default headers if not set already
 
-	if DEBUG {
-		log.Println("The request headers: ")
-		spew.Fdump(debugWriter, req.Header)
-	}
+	logDebug("The request headers: ")
+	dumpDebug(req.Header)
 
 	d, err := DumpRequest(req) // getting the byte representation of the ICAP request
 
@@ -65,6 +60,7 @@ func (c *Client) Do(req *Request) (*Response, error) {
 	}
 
 	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview && req.previewSet { // this block suggests that the ICAP request contained preview body bytes and whole body did not fit in the preview, so the serber responded with 100 Continue and the client is to send the remaining body bytes only
+		logDebug("Making request for the rest of the remaining body bytes after preview, as received 100 Continue from the server...")
 		return c.DoRemaining(req)
 	}
 
