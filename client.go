@@ -45,7 +45,7 @@ func (c *Client) Do(req *Request) (*Response, error) {
 
 	if DEBUG {
 		log.Println("The request headers: ")
-		spew.Dump(req.Header)
+		spew.Fdump(debugWriter, req.Header)
 	}
 
 	d, err := DumpRequest(req) // getting the byte representation of the ICAP request

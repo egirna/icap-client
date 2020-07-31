@@ -113,7 +113,7 @@ func (t *transport) read() (string, error) {
 			break
 		}
 
-		if strings.Contains(string(data), icap204NoModsMsg){
+		if strings.Contains(string(data), icap204NoModsMsg) {
 			if DEBUG {
 				log.Println("End of file detected by 204 no modifications and Double CRLF at the end")
 			}
@@ -121,7 +121,7 @@ func (t *transport) read() (string, error) {
 		}
 
 		if DEBUG {
-			spew.Dump(tmp)
+			spew.Fdump(debugWriter, tmp)
 		}
 
 	}
