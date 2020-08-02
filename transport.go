@@ -3,12 +3,9 @@ package icapclient
 import (
 	"context"
 	"io"
-	"log"
 	"net"
 	"strings"
 	"time"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // transport represents the transport layer data
@@ -67,6 +64,8 @@ func (t *transport) dialWithContext(ctx context.Context) error {
 
 // Write writes data to the server
 func (t *transport) write(data []byte) (int, error) {
+	logDebug("Dumping the message being sent to the server...")
+	dumpDebug(string(data))
 	return t.sckt.Write(data)
 }
 
@@ -75,9 +74,7 @@ func (t *transport) read() (string, error) {
 
 	data := make([]byte, 0)
 
-	if DEBUG {
-		log.Println("Dumping messages received from the socket...")
-	}
+	logDebug("Dumping messages received from the server...")
 
 	for {
 		tmp := make([]byte, 1096)
@@ -86,43 +83,34 @@ func (t *transport) read() (string, error) {
 
 		if err != nil {
 			if err == io.EOF {
-				if DEBUG {
-					log.Println("End of file detected from EOF error")
-				}
+				logDebug("End of file detected from EOF error")
 				break
 			}
 			return "", err
 		}
 
 		if n == 0 {
-			if DEBUG {
-				log.Println("End of file detected by 0 bytes")
-			}
+			logDebug("End of file detected by 0 bytes")
 			break
 		}
 
 		data = append(data, tmp[:n]...)
 		if string(data) == icap100ContinueMsg { // explicitly breaking because the Read blocks for 100 continue message // TODO: find out why
+			logDebug("Stopping because got 100 Continue from the server")
 			break
 		}
 
 		if strings.HasSuffix(string(data), "0\r\n\r\n") {
-			if DEBUG {
-				log.Println("End of the file detected by 0 Double CRLF indicator")
-			}
+			logDebug("End of the file detected by 0 Double CRLF indicator")
 			break
 		}
 
-		if strings.Contains(string(data), icap204NoModsMsg){
-			if DEBUG {
-				log.Println("End of file detected by 204 no modifications and Double CRLF at the end")
-			}
+		if strings.Contains(string(data), icap204NoModsMsg) {
+			logDebug("End of file detected by 204 no modifications and Double CRLF at the end")
 			break
 		}
 
-		if DEBUG {
-			spew.Dump(tmp)
-		}
+		dumpDebug(string(tmp))
 
 	}
 

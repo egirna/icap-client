@@ -92,5 +92,8 @@ func (d *Driver) Receive() (*Response, error) {
 		return nil, err
 	}
 
+	logDebug("The final *ic.Response from tcp messages...")
+	dumpDebug(resp)
+
 	return resp, nil
 }

@@ -121,7 +121,9 @@ func bodyAlreadyChunked(str string) bool {
 		return false
 	}
 
-	return strings.HasSuffix(bodyStr, bodyEndIndicator)
+	r := regexp.MustCompile("\\r\\n0(\\r\\n)+$")
+	return r.MatchString(bodyStr)
+
 }
 
 // parsePreviewBodyBytes parses the preview portion of the body and only keeps that in the message

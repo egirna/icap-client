@@ -67,6 +67,22 @@ import ic "github.com/egirna/icap-client"
 
 ```
 
+**DEBUG Mode**
+
+Turn on debug mode to inspect detailed & verbose logs to debug your code during development
+
+```go
+  ic.SetDebugMode(true)
+
+```
+
+By default the icap-client will dump the debugging logs to the standard output(stdout), but you can always add your custom writer
+
+```go
+  f, _ := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+  ic.SetDebugOutput(f)
+```
+
 For more details, see the [docs](https://godoc.org/github.com/egirna/icap-client) and [examples](examples/).
 
 
