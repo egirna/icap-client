@@ -1,4 +1,4 @@
-package tests
+package icapclient
 
 import (
 	"bytes"
