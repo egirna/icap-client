@@ -406,7 +406,15 @@ func TestRequest(t *testing.T) {
 				t.Fail()
 			}
 
-			bdyBytes, _ := ioutil.ReadAll(req.HTTPRequest.Body)
+			var bdyBytes []byte
+
+			if sample.reqMethod == MethodREQMOD {
+				bdyBytes, _ = ioutil.ReadAll(req.HTTPRequest.Body)
+			}
+
+			if sample.reqMethod == MethodRESPMOD {
+				bdyBytes, _ = ioutil.ReadAll(req.HTTPResponse.Body)
+			}
 
 			if string(bdyBytes) != sample.bodyStr {
 				t.Logf("Wanted body string:%s, got:%s", sample.bodyStr, string(bdyBytes))
@@ -432,7 +440,5 @@ func TestRequest(t *testing.T) {
 		}
 
 	})
-
-	// TODO: add the rest of the request unit tests starting with SetPreview RESPMOD
 
 }

@@ -5,66 +5,87 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestResponse(t *testing.T) {
 
-	t.Run("ReadResponse getting reqmod response", func(t *testing.T) {
+	t.Run("ReadResponse REQMOD", func(t *testing.T) { // FIXME: headers and content request aren't being tested properly
 
-		respStr := "ICAP/1.0 200 OK\n" +
-			"Date: Mon, 10 Jan 2000  09:55:21 GMT\n" +
-			"Server: ICAP-Server-Software/1.0\n" +
-			"Connection: close\n" +
-			"ISTag: \"W3E4R7U9-L2E4-2\"\n" +
-			"Encapsulated: req-hdr=0, null-body=231\n\n" +
-			"GET /modified-path HTTP/1.1\r\n" +
-			"Host: www.origin-server.com\r\n" +
-			"Via: 1.0 icap-server.net (ICAP Example ReqMod Service 1.1)\r\n" +
-			"Accept: text/html, text/plain, image/gif\r\n" +
-			"Accept-Encoding: gzip, compress\r\n" +
-			"If-None-Match: \"xyzzy\", \"r2d2xxxx\"\r\n\r\n"
-
-		resp, err := ReadResponse(bufio.NewReader(strings.NewReader(respStr)))
-
-		if err != nil {
-			t.Fatal(err.Error())
+		type testSample struct {
+			headers      http.Header
+			status       string
+			statusCode   int
+			previewBytes int
+			respStr      string
+			httpReqStr   string
 		}
 
-		wantedICAPStatusCode := 200
-		if resp.StatusCode != wantedICAPStatusCode {
-			t.Errorf("Expected ICAP server response status code to be %d got %d", wantedICAPStatusCode, resp.StatusCode)
-		}
-		wantedICAPStatus := "OK"
-		if resp.Status != wantedICAPStatus {
-			t.Errorf("Expected ICAP server response status to be %s, got %s", wantedICAPStatus, resp.Status)
-		}
-
-		if resp.ContentRequest != nil {
-			headerValue := "text/html, text/plain, image/gif"
-			if resp.ContentRequest.Header.Get("Accept") != "text/html, text/plain, image/gif" {
-				t.Errorf("Expected value of http request header Accecpt to be %s , got %s", headerValue,
-					resp.ContentRequest.Header.Get("Accept"))
-			}
-
-			wantedURI := "/modified-path"
-			if resp.ContentRequest.RequestURI != wantedURI {
-				t.Errorf("Expected http request requestedURI to be %s, got %s", wantedURI, resp.ContentRequest.RequestURI)
-			}
-			wantedMethod := http.MethodGet
-			if resp.ContentRequest.Method != wantedMethod {
-				t.Errorf("Expected http request method  to be %s, got %s", wantedMethod, resp.ContentRequest.Method)
-			}
-
-			wantedHost := "www.origin-server.com"
-			if resp.ContentRequest.Host != wantedHost {
-				t.Errorf("Expected http request host  to be %s, got %s", wantedHost, resp.ContentRequest.Host)
-			}
+		sampleTable := []testSample{
+			{
+				headers: http.Header{
+					"Date":         []string{"Mon, 10 Jan 2000  09:55:21 GMT"},
+					"Server":       []string{"ICAP-Server-Software/1.0"},
+					"ISTag":        []string{"\"W3E4R7U9-L2E4-2\""},
+					"Encapsulated": []string{"req-hdr=0, null-body=231"},
+				},
+				status:       "OK",
+				statusCode:   200,
+				previewBytes: 0,
+				respStr: "ICAP/1.0 200 OK\r\n" +
+					"Date: Mon, 10 Jan 2000  09:55:21 GMT\r\n" +
+					"Server: ICAP-Server-Software/1.0\r\n" +
+					"Connection: close\r\n" +
+					"ISTag: \"W3E4R7U9-L2E4-2\"\r\n" +
+					"Encapsulated: req-hdr=0, null-body=231\r\n\r\n",
+				httpReqStr: "GET /modified-path HTTP/1.1\r\n" +
+					"Host: www.origin-server.com\r\n" +
+					"Via: 1.0 icap-server.net (ICAP Example ReqMod Service 1.1)\r\n" +
+					"Accept: text/html, text/plain, image/gif\r\n" +
+					"Accept-Encoding: gzip, compress\r\n" +
+					"If-None-Match: \"xyzzy\", \"r2d2xxxx\"\r\n\r\n",
+			},
 		}
 
-		if resp.ContentRequest == nil {
-			t.Error("The http request should not be nil")
+		for _, sample := range sampleTable {
+			resp, err := ReadResponse(bufio.NewReader(strings.NewReader(sample.respStr)))
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+
+			if resp.StatusCode != sample.statusCode {
+				t.Logf("Wanted ICAP status code: %d , got: %d", sample.statusCode, resp.StatusCode)
+				t.Fail()
+			}
+			if resp.Status != sample.status {
+				t.Logf("Wanted ICAP status: %s , got: %s", sample.status, resp.Status)
+				t.Fail()
+			}
+			if resp.PreviewBytes != sample.previewBytes {
+				t.Logf("Wanted preview bytes: %d, got: %d", sample.previewBytes, resp.PreviewBytes)
+				t.Fail()
+			}
+			if !reflect.DeepEqual(resp.Header, sample.headers) {
+				t.Logf("Wanted ICAP header: %v, got: %v", sample.headers, resp.Header)
+				t.Fail()
+			}
+			if resp.ContentRequest == nil {
+				t.Log("ContentRequest is nil")
+				t.Fail()
+			}
+
+			wantedHTTPReq, err := http.ReadRequest(bufio.NewReader(strings.NewReader(sample.httpReqStr)))
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+
+			if !reflect.DeepEqual(resp.ContentRequest, wantedHTTPReq) {
+				t.Logf("Wanted http request: %v, got: %v", wantedHTTPReq, resp.ContentRequest)
+				t.Fail()
+			}
+
 		}
 
 	})
