@@ -93,7 +93,6 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 			httpMsg += strings.TrimSpace(currentMsg) + CRLF
 			bufferEmpty := b.Buffered() == 0
 			if currentMsg == CRLF || bufferEmpty { // a CRLF indicates the end of a http message and the buffer check is just in case the buffer eneded with one last message instead of a CRLF
-				httpMsg += CRLF
 				var erR error
 				resp.ContentRequest, erR = http.ReadRequest(bufio.NewReader(strings.NewReader(httpMsg)))
 				if erR != nil {
@@ -107,7 +106,6 @@ func ReadResponse(b *bufio.Reader) (*Response, error) {
 			httpMsg += strings.TrimSpace(currentMsg) + CRLF
 			bufferEmpty := b.Buffered() == 0
 			if currentMsg == CRLF || bufferEmpty {
-				httpMsg += CRLF
 				var erR error
 				resp.ContentResponse, erR = http.ReadResponse(bufio.NewReader(strings.NewReader(httpMsg)), resp.ContentRequest)
 				if erR != nil {
