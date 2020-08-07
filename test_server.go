@@ -22,7 +22,7 @@ var (
 )
 
 const (
-	previewBytes      = 4096
+	previewBytes      = 24
 	goodFileDetectStr = "GOOD FILE"
 	badFileDetectStr  = "BAD FILE"
 	goodURL           = "http://goodifle.com"
@@ -79,7 +79,7 @@ func respmodHandler(w icap.ResponseWriter, req *icap.Request) {
 			return
 		}
 
-		log.Println("The preview data: ", string(req.Preview))
+		// log.Println("The preview data: ", string(req.Preview))
 
 		buf := &bytes.Buffer{}
 
@@ -118,14 +118,13 @@ func reqmodHandler(w icap.ResponseWriter, req *icap.Request) {
 		h.Set("Transfer-Preview", "*")
 		w.WriteHeader(http.StatusOK, nil, false)
 	case "REQMOD":
-		defer req.Response.Body.Close()
 
 		if val, exist := req.Header["Allow"]; !exist || (len(val) > 0 && val[0] != "204") {
 			w.WriteHeader(http.StatusNoContent, nil, false)
 			return
 		}
 
-		log.Println("The preview data: ", string(req.Preview))
+		// log.Println("The preview data: ", string(req.Preview))
 
 		fileURL := req.Request.RequestURI
 
