@@ -90,6 +90,9 @@ func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr stri
 
 // replaceRequestURIWithActualURL replaces the just the escaped portion of the url with the entire URL in the dumped request message
 func replaceRequestURIWithActualURL(str *string, uri, url string) {
+	if uri == "" {
+		uri = "/"
+	}
 	*str = strings.Replace(*str, uri, url, 1)
 }
 
@@ -121,7 +124,9 @@ func bodyAlreadyChunked(str string) bool {
 		return false
 	}
 
-	return strings.HasSuffix(bodyStr, bodyEndIndicator)
+	r := regexp.MustCompile("\\r\\n0(\\r\\n)+$")
+	return r.MatchString(bodyStr)
+
 }
 
 // parsePreviewBodyBytes parses the preview portion of the body and only keeps that in the message
