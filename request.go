@@ -93,10 +93,12 @@ func DumpRequest(req *Request) ([]byte, error) {
 				}
 			}
 
-			if httpReqStr != "" && !strings.HasSuffix(httpReqStr, DoubleCRLF) { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+		}
+
+		if httpReqStr != "" { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+			for !strings.HasSuffix(httpReqStr, DoubleCRLF) {
 				httpReqStr += CRLF
 			}
-
 		}
 
 	}

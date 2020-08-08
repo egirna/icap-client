@@ -90,6 +90,9 @@ func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr stri
 
 // replaceRequestURIWithActualURL replaces the just the escaped portion of the url with the entire URL in the dumped request message
 func replaceRequestURIWithActualURL(str *string, uri, url string) {
+	if uri == "" {
+		uri = "/"
+	}
 	*str = strings.Replace(*str, uri, url, 1)
 }
 
