@@ -12,7 +12,9 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	go startTestServer()
+	if !testServerRunning() {
+		go startTestServer()
+	}
 
 	t.Run("Client Do RESPMOD", func(t *testing.T) {
 
@@ -577,5 +579,7 @@ func TestClient(t *testing.T) {
 		}
 	})
 
-	defer stopTestServer()
+	if testServerRunning() {
+		defer stopTestServer()
+	}
 }

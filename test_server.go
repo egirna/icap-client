@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -47,7 +48,6 @@ func startTestServer() {
 	time.Sleep(5 * time.Millisecond)
 
 	log.Printf("ICAP test server is running on localhost:%d\n...\n", port)
-
 	<-stop
 
 	log.Println("ICAP test server is shut down!")
@@ -140,4 +140,13 @@ func reqmodHandler(w icap.ResponseWriter, req *icap.Request) {
 		w.WriteHeader(status, nil, false)
 
 	}
+}
+
+func testServerRunning() bool {
+	lstnr, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return true
+	}
+	lstnr.Close()
+	return false
 }
