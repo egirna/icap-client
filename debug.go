@@ -12,6 +12,7 @@ import (
 var (
 	DEBUG       = false
 	debugWriter io.Writer
+	logger      *log.Logger
 )
 
 const (
@@ -24,26 +25,26 @@ func SetDebugMode(debug bool) {
 
 	if DEBUG { // setting os.Stdout as the default debug writer if debug mode is enabled & also the debug prefix
 		debugWriter = os.Stdout
-		log.SetPrefix(debugPrefix)
-		log.SetOutput(debugWriter)
+		logger = log.New(debugWriter, debugPrefix, log.LstdFlags)
+
 	}
 }
 
 // SetDebugOutput sets writer to write the debug outputs (default: os.Stdout)
 func SetDebugOutput(w io.Writer) {
 	debugWriter = w
-	log.SetOutput(debugWriter)
+	logger.SetOutput(debugWriter)
 }
 
 func logDebug(a ...interface{}) {
 	if DEBUG {
-		log.Println(a...)
+		logger.Println(a...)
 	}
 }
 
 func logfDebug(s string, a ...interface{}) {
 	if DEBUG {
-		log.Printf(s, a...)
+		logger.Printf(s, a...)
 	}
 }
 
