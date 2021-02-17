@@ -27,6 +27,20 @@ func NewDriver(host string, port int) *Driver {
 	}
 }
 
+//TlSDial Connecting with a custom root-certificate set.
+func (d *Driver) TlSDial() error {
+	d.tcp = &transport{
+		network:      "tcp",
+		addr:         fmt.Sprintf("%s:%d", d.Host, d.Port),
+		timeout:      d.DialerTimeout,
+		readTimeout:  d.ReadTimeout,
+		writeTimeout: d.WriteTimeout,
+	}
+
+	return d.tcp.tlsdial() //return conn
+
+}
+
 // Connect fires up a tcp socket connection with the icap server
 func (d *Driver) Connect() error {
 

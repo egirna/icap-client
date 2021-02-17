@@ -1,6 +1,7 @@
 package icapclient
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -31,8 +32,17 @@ func (c *Client) Do(req *Request) (*Response, error) {
 			return nil, err
 		}
 	} else {
-		if err := c.scktDriver.Connect(); err != nil {
-			return nil, err
+		if req.ConnType == "tls" { // connect with tls if is set
+			fmt.Println("tls conn")
+			if err := c.scktDriver.TlSDial(); err != nil {
+				return nil, err
+			}
+		} else { // connect with tcp default
+			fmt.Println("tcp conn")
+			if err := c.scktDriver.Connect(); err != nil {
+				return nil, err
+			}
+
 		}
 	}
 

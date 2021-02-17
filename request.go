@@ -22,11 +22,40 @@ type Request struct {
 	previewSet            bool
 	bodyFittedInPreview   bool
 	remainingPreviewBytes []byte
+	ConnType              string
 }
 
-// NewRequest is the factory function for Request
-func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Response) (*Request, error) {
+// NewRequestTLS is the factory function for Request
+func NewRequestTLS(method, urlStr string, httpReq *http.Request, httpResp *http.Response, conntype string) (*Request, error) {
+	method = strings.ToUpper(method)
 
+	u, err := url.Parse(urlStr)
+
+	if err != nil {
+		return nil, err
+	}
+	if conntype == "" {
+		conntype = "empty"
+	}
+
+	req := &Request{
+		Method:       method,
+		URL:          u,
+		Header:       make(map[string][]string),
+		HTTPRequest:  httpReq,
+		HTTPResponse: httpResp,
+		ConnType:     conntype,
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRequest  is the factory function for Request
+func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Response) (*Request, error) {
 	method = strings.ToUpper(method)
 
 	u, err := url.Parse(urlStr)
@@ -78,6 +107,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 
 		httpReqStr += string(b)
+
 		replaceRequestURIWithActualURL(&httpReqStr, req.HTTPRequest.URL.EscapedPath(), req.HTTPRequest.URL.String())
 
 		if req.Method == MethodREQMOD {

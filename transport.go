@@ -2,6 +2,7 @@ package icapclient
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net"
 	"strings"
@@ -16,6 +17,27 @@ type transport struct {
 	readTimeout  time.Duration
 	writeTimeout time.Duration
 	sckt         net.Conn
+}
+
+func (t *transport) tlsdial() error {
+	sckt, err := tls.Dial(t.network, t.addr, &tls.Config{
+		InsecureSkipVerify: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := sckt.SetReadDeadline(time.Now().UTC().Add(t.readTimeout)); err != nil {
+		return err
+	}
+
+	if err := sckt.SetWriteDeadline(time.Now().UTC().Add(t.writeTimeout)); err != nil {
+		return err
+	}
+
+	t.sckt = sckt
+
+	return nil
 }
 
 // dial fires up a tcp socket
