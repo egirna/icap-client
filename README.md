@@ -9,7 +9,7 @@ Talk to the ICAP servers using probably the first ICAP client package in GO!
 
 ### Installing
 ```console
-go get -u github.com/egirna/icap-client
+go get -u github.com/haitham911/icap-client
 
 ```
 
@@ -18,7 +18,7 @@ go get -u github.com/egirna/icap-client
 **Import The Package**
 
 ```go
-import ic "github.com/egirna/icap-client"
+import ic "github.com/haitham911/icap-client"
 
 ```
 
@@ -45,6 +45,29 @@ import ic "github.com/egirna/icap-client"
 ```
 
 **Note**: ``httpReq`` & ``httpResp`` here are ``*http.Response`` & ``*http.Request`` respectively
+
+**Making Tls InsecureSkipVerify call**
+
+```go
+
+  req, err := ic.NewRequestTLS(ic.MethodRESPMOD, "icap://<host>:<port>/<path>", httpReq, httpResp,"tls")
+
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  client := &ic.Client{
+		Timeout: 5 * time.Second,
+	}
+
+  resp, err := client.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+```
+
 
 **Setting preview obtained from OPTIONS call**
 
