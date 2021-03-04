@@ -55,9 +55,9 @@ func setEncapsulatedHeaderValue(icapReqStr *string, httpReqStr, httpRespStr stri
 
 	if strings.HasPrefix(*icapReqStr, MethodREQMOD) || strings.HasPrefix(*icapReqStr, MethodRESPMOD) { // if the request method is RESPMOD or REQMOD
 		re := regexp.MustCompile(DoubleCRLF)                // looking for the match of the string \r\n\r\n, as that is the expression that seperates each blocks, i.e headers and bodies
-		reqIndices := re.FindAllStringIndex(httpReqStr, -1) // getting the offsets of the matches, tells us the starting/ending point of headers and bodies
+		reqIndices := re.FindAllStringIndex(httpReqStr, -1) // getting the s of the matches, tells us the starting/ending point of headers and bodies
 
-		reqEndsAt := 0 // this is needed to calculate the response headers by adding the last offset of the request block
+		reqEndsAt := 0 // this is needed to calculate the response headers by adding the last  of the request block
 		if reqIndices != nil {
 			encpVal += "req-hdr=0"
 			reqEndsAt = reqIndices[0][1]
