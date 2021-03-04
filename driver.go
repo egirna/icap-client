@@ -1,11 +1,9 @@
 package icapclient
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -43,6 +41,7 @@ func (d *Driver) TlSDial() error {
 
 // Connect fires up a tcp socket connection with the icap server
 func (d *Driver) Connect() error {
+	fmt.Println("Connect")
 
 	d.tcp = &transport{
 		network:      "tcp",
@@ -70,6 +69,8 @@ func (d *Driver) ConnectWithContext(ctx context.Context) error {
 
 // Close closes the socket connection
 func (d *Driver) Close() error {
+	fmt.Println("close")
+
 	if d.tcp == nil {
 
 		return errors.New(ErrConnectionNotOpen)
@@ -80,6 +81,7 @@ func (d *Driver) Close() error {
 
 // Send sends a request to the icap server
 func (d *Driver) Send(data []byte) error {
+	fmt.Println("send")
 
 	_, err := d.tcp.write(data)
 
@@ -93,21 +95,22 @@ func (d *Driver) Send(data []byte) error {
 
 // Receive returns the respone from the tcp socket connection
 func (d *Driver) Receive() (*Response, error) {
+	fmt.Println("Receive")
 
-	msg, err := d.tcp.read()
+	mgs := d.tcp.read()
 
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := ReadResponse(bufio.NewReader(strings.NewReader(msg)))
+	resp, err := ReadRespons(mgs)
 
 	if err != nil {
 		return nil, err
 	}
 
 	logDebug("The final *ic.Response from tcp messages...")
+	//	dumpDebug(resp)
+
 	dumpDebug(resp)
+
+	//	icapresp := new(IcapRequest)
 
 	return resp, nil
 }

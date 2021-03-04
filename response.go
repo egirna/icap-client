@@ -2,18 +2,23 @@ package icapclient
 
 import (
 	"bufio"
-	"errors"
+	"bytes"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/textproto"
+	"net/url"
 	"strconv"
 	"strings"
 )
 
 // Response represents the icap server response data
-type Response struct {
+type Responseold struct {
 	StatusCode      int
 	Status          string
 	PreviewBytes    int
-	Header          http.Header
+	Header          textproto.MIMEHeader
 	ContentRequest  *http.Request
 	ContentResponse *http.Response
 }
@@ -35,89 +40,235 @@ var (
 	}
 )
 
-// ReadResponse converts a Reader to a icapclient Response
-func ReadResponse(b *bufio.Reader) (*Response, error) {
+// An emptyReader is an io.ReadCloser that always returns os.EOF.
+type emptyReader byte
 
-	resp := &Response{
-		Header: make(map[string][]string),
+func (emptyReader) Read(p []byte) (n int, err error) {
+	return 0, io.EOF
+}
+
+func (emptyReader) Close() error {
+	return nil
+}
+
+// A continueReader sends a "100 Continue" message the first time Read
+// is called, creates a ChunkedReader, and reads from that.
+type continueReader struct {
+	buf *bufio.ReadWriter // the underlying connection
+	cr  io.Reader         // the ChunkedReader
+}
+
+func (c *continueReader) Read(p []byte) (n int, err error) {
+	if c.cr == nil {
+		_, err := c.buf.WriteString("ICAP/1.0 100 Continue\r\n\r\n")
+		if err != nil {
+			return 0, err
+		}
+		err = c.buf.Flush()
+		if err != nil {
+			return 0, err
+		}
+		c.cr = newChunkedReader(c.buf)
 	}
 
-	scheme := ""
-	httpMsg := ""
-	for currentMsg, err := b.ReadString('\n'); err == nil || currentMsg != ""; currentMsg, err = b.ReadString('\n') { // keep reading the buffer message which is the http response message
+	return c.cr.Read(p)
+}
 
-		if isRequestLine(currentMsg) { // if the current message line if the first line of the message portion(request line)
-			ss := strings.Split(currentMsg, " ")
+type badStringError struct {
+	what string
+	str  string
+}
 
-			if len(ss) < 3 { // must contain 3 words, for example: "ICAP/1.0 200 OK" or "GET /something HTTP/1.1"
-				return nil, errors.New(ErrInvalidTCPMsg + ":" + currentMsg)
-			}
+func (e *badStringError) Error() string { return fmt.Sprintf("%s %q", e.what, e.str) }
 
-			// preparing the scheme below
+//Response represents a parsed ICAP request.
+type Response struct {
+	Method       string               // REQMOD, RESPMOD, OPTIONS, etc.
+	RawURL       string               // The URL given in the request.
+	URL          *url.URL             // Parsed URL.
+	Proto        string               // The protocol version.
+	Header       textproto.MIMEHeader // The ICAP header
+	RemoteAddr   string               // the address of the computer sending the request
+	Preview      []byte               // the body data for an ICAP preview
+	StatusCode   int
+	Status       string
+	PreviewBytes int
+	// The HTTP messages.
+	Body            []byte
+	ContentRequest  *http.Request
+	ContentResponse *http.Response
+}
 
-			if ss[0] == ICAPVersion {
-				scheme = SchemeICAP
-				resp.StatusCode, resp.Status, err = getStatusWithCode(ss[1], strings.Join(ss[2:], " "))
-				if err != nil {
+//ReadRespons chunked
+func ReadRespons(b *bufio.ReadWriter) (resp *Response, err error) {
+	tp := textproto.NewReader(b.Reader)
+
+	resp = new(Response)
+
+	// Read first line.
+	var s string
+	s, err = tp.ReadLine()
+	if err != nil {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+		return nil, err
+	}
+
+	//samplefile.ReadFrom(s)
+	f := strings.SplitN(string(s), " ", 3)
+	if len(f) < 3 {
+		return nil, err
+	}
+	getStatusWithCode(f[1], f[2])
+	resp.StatusCode, resp.Status, err = getStatusWithCode(f[1], f[2])
+
+	resp.Method = f[0]
+
+	resp.Header, err = tp.ReadMIMEHeader()
+	if err != nil {
+		return nil, err
+	}
+	//fmt.Println(string(req.Header))
+
+	s = resp.Header.Get("Encapsulated")
+	if s == "" {
+		return resp, nil // No HTTP headers or body.
+	}
+
+	eList := strings.Split(s, ", ")
+	var initialOffset, reqHdrLen, respHdrLen int
+	var hasBody bool
+	var prevKey string
+	var prevValue int
+	for _, item := range eList {
+		eq := strings.Index(item, "=")
+		if eq == -1 {
+			return nil, &badStringError{"malformed Encapsulated: header", s}
+		}
+		key := item[:eq]
+		value, err := strconv.Atoi(item[eq+1:])
+		if err != nil {
+			return nil, &badStringError{"malformed Encapsulated: header", s}
+		}
+
+		// Calculate the length of the previous section.
+		switch prevKey {
+		case "":
+			initialOffset = value
+		case "req-hdr":
+			reqHdrLen = value - prevValue
+		case "res-hdr":
+			respHdrLen = value - prevValue
+		case "req-body", "opt-body", "res-body", "null-body":
+			return nil, fmt.Errorf("%s must be the last section", prevKey)
+		}
+
+		switch key {
+		case "req-hdr", "res-hdr", "null-body":
+		case "req-body", "res-body", "opt-body":
+			hasBody = true
+		default:
+			return nil, &badStringError{"invalid key for Encapsulated: header", key}
+		}
+
+		prevValue = value
+		prevKey = key
+
+	}
+
+	// Read the HTTP headers.
+
+	var rawReqHdr, rawRespHdr []byte
+	if initialOffset > 0 {
+		junk := make([]byte, initialOffset)
+		_, err = io.ReadFull(b, junk)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if reqHdrLen > 0 {
+		rawReqHdr = make([]byte, reqHdrLen)
+		_, err = io.ReadFull(b, rawReqHdr)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if respHdrLen > 0 {
+		rawRespHdr = make([]byte, respHdrLen)
+		_, err = io.ReadFull(b, rawRespHdr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var bodyReader io.ReadCloser = emptyReader(0)
+	if hasBody {
+		if p := resp.Header.Get("Preview"); p != "" {
+			moreBody := true
+			resp.Preview, err = ioutil.ReadAll(newChunkedReader(b))
+			if err != nil {
+				if strings.Contains(err.Error(), "ieof") {
+					// The data ended with "0; ieof", which the HTTP chunked reader doesn't understand.
+					moreBody = false
+					err = nil
+				} else {
 					return nil, err
 				}
-				continue
 			}
+			var r io.Reader = bytes.NewBuffer(resp.Preview)
+			if moreBody {
+				r = io.MultiReader(r, &continueReader{buf: b})
+			}
+			bodyReader = ioutil.NopCloser(r)
+		} else {
+			bodyReader = ioutil.NopCloser(newChunkedReader(b))
 
-			if ss[0] == HTTPVersion {
-				scheme = SchemeHTTPResp
-				httpMsg = ""
-			}
+			/*filepath := "client/re_now.txt"
+			samplefile, _ := os.Create(filepath)
 
-			if strings.TrimSpace(ss[2]) == HTTPVersion { // for a http request message if the scheme version is always at last, for example: GET /something HTTP/1.1
-				scheme = SchemeHTTPReq
-				httpMsg = ""
-			}
+			defer samplefile.Close()
+
+			//	io.Copy(samplefile, resp.ContentResponse.Body)
+			samplefile.ReadFrom(bodyReader)*/
+			// check errors
 		}
-
-		// preparing the header for ICAP & contents for HTTP messages below
-
-		if scheme == SchemeICAP {
-			if currentMsg == LF || currentMsg == CRLF { // don't want to count the Line Feed as header
-				continue
-			}
-			header, val := getHeaderVal(currentMsg)
-			if header == PreviewHeader {
-				pb, _ := strconv.Atoi(val)
-				resp.PreviewBytes = pb
-			}
-			resp.Header.Add(header, val)
-		}
-
-		if scheme == SchemeHTTPReq {
-			httpMsg += strings.TrimSpace(currentMsg) + CRLF
-			bufferEmpty := b.Buffered() == 0
-			if currentMsg == CRLF || bufferEmpty { // a CRLF indicates the end of a http message and the buffer check is just in case the buffer eneded with one last message instead of a CRLF
-				var erR error
-				resp.ContentRequest, erR = http.ReadRequest(bufio.NewReader(strings.NewReader(httpMsg)))
-				if erR != nil {
-					return nil, erR
-				}
-				continue
-			}
-		}
-
-		if scheme == SchemeHTTPResp {
-			httpMsg += strings.TrimSpace(currentMsg) + CRLF
-			bufferEmpty := b.Buffered() == 0
-			if currentMsg == CRLF || bufferEmpty {
-				var erR error
-				resp.ContentResponse, erR = http.ReadResponse(bufio.NewReader(strings.NewReader(httpMsg)), resp.ContentRequest)
-				if erR != nil {
-					return nil, erR
-				}
-				continue
-			}
-
-		}
-
 	}
 
-	return resp, nil
+	// Construct the http.Request.
+	if rawReqHdr != nil {
 
+		resp.ContentRequest, err = http.ReadRequest(bufio.NewReader(bytes.NewBuffer(rawReqHdr)))
+		if err != nil {
+			return nil, fmt.Errorf("error while parsing HTTP request: %v", err)
+		}
+
+		if resp.Method == "REQMOD" {
+			resp.ContentRequest.Body = bodyReader
+		} else {
+			resp.ContentRequest.Body = emptyReader(0)
+		}
+	}
+
+	// Construct the http.Response.
+
+	if rawRespHdr != nil {
+		request := resp.ContentRequest
+		if request == nil {
+			request, _ = http.NewRequest("GET", "/", nil)
+		}
+
+		resp.ContentResponse, err = http.ReadResponse(bufio.NewReader(bytes.NewBuffer(rawRespHdr)), request)
+		if err != nil {
+			return nil, fmt.Errorf("error while parsing HTTP response: %v", err)
+		}
+
+		if hasBody {
+			resp.ContentResponse.Body = bodyReader
+		} else {
+			resp.ContentResponse.Body = emptyReader(0)
+		}
+	}
+
+	return
 }

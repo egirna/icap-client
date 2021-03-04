@@ -125,7 +125,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 		}
 
-		if httpReqStr != "" { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+		if httpReqStr != "" { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte s
 			for !strings.HasSuffix(httpReqStr, DoubleCRLF) {
 				httpReqStr += CRLF
 			}
@@ -152,12 +152,13 @@ func DumpRequest(req *Request) ([]byte, error) {
 		if !bodyAlreadyChunked(httpRespStr) {
 			headerStr, bodyStr, ok := splitBodyAndHeader(httpRespStr)
 			if ok {
+				//888
 				addHexaBodyByteNotations(&bodyStr)
 				mergeHeaderAndBody(&httpRespStr, headerStr, bodyStr)
 			}
 		}
 
-		if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+		if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte s
 			httpRespStr += CRLF
 		}
 
@@ -178,6 +179,8 @@ func DumpRequest(req *Request) ([]byte, error) {
 	if req.Method == MethodREQMOD && req.previewSet && req.bodyFittedInPreview {
 		addFullBodyInPreviewIndicator(&httpReqStr)
 	}
+	//	fmt.Println(reqStr)
+	//fmt.Println(httpReqStr)
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
 

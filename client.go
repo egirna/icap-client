@@ -2,6 +2,7 @@ package icapclient
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,6 +74,15 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		logDebug("Making request for the rest of the remaining body bytes after preview, as received 100 Continue from the server...")
 		return c.DoRemaining(req)
 	}
+	if resp.ContentResponse != nil {
+		datares, errb := ioutil.ReadAll(resp.ContentResponse.Body)
+		if errb != nil {
+			resp.Body = nil
+		} else {
+			resp.Body = datares
+
+		}
+	}
 
 	return resp, nil
 }
@@ -93,7 +103,6 @@ func (c *Client) DoRemaining(req *Request) (*Response, error) {
 	}
 
 	resp, err := c.scktDriver.Receive()
-
 	if err != nil {
 		return nil, err
 	}
