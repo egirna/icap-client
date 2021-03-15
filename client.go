@@ -33,12 +33,12 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		}
 	} else {
 		if req.ConnType == "tls" { // connect with tls if is set
-			fmt.Println("Tls Conn")
+			fmt.Println("TLS connection")
 			if err := c.scktDriver.TlSDial(); err != nil {
 				return nil, err
 			}
 		} else { // connect with tcp default
-			fmt.Println("Tcp Conn")
+			fmt.Println("TCP connection")
 			if err := c.scktDriver.Connect(); err != nil {
 				return nil, err
 			}
@@ -73,18 +73,6 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		logDebug("Making request for the rest of the remaining body bytes after preview, as received 100 Continue from the server...")
 		return c.DoRemaining(req)
 	}
-	/*
-		if resp.ContentResponse != nil {
-			datares, errb := ioutil.ReadAll(resp.ContentResponse.Body)
-			if errb != nil {
-				resp.Body = nil
-			} else {
-				//resp.Body = resp.Body + datares
-				n := len(datares)
-				resp.Body = append(resp.Body, datares[:n]...)
-
-			}
-		}*/
 
 	return resp, nil
 }
