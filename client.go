@@ -2,7 +2,6 @@ package icapclient
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,12 +33,12 @@ func (c *Client) Do(req *Request) (*Response, error) {
 		}
 	} else {
 		if req.ConnType == "tls" { // connect with tls if is set
-			fmt.Println("tls conn")
+			fmt.Println("TLS connection")
 			if err := c.scktDriver.TlSDial(); err != nil {
 				return nil, err
 			}
 		} else { // connect with tcp default
-			fmt.Println("tcp conn")
+			fmt.Println("TCP connection")
 			if err := c.scktDriver.Connect(); err != nil {
 				return nil, err
 			}
@@ -73,15 +72,6 @@ func (c *Client) Do(req *Request) (*Response, error) {
 	if resp.StatusCode == http.StatusContinue && !req.bodyFittedInPreview && req.previewSet { // this block suggests that the ICAP request contained preview body bytes and whole body did not fit in the preview, so the serber responded with 100 Continue and the client is to send the remaining body bytes only
 		logDebug("Making request for the rest of the remaining body bytes after preview, as received 100 Continue from the server...")
 		return c.DoRemaining(req)
-	}
-	if resp.ContentResponse != nil {
-		datares, errb := ioutil.ReadAll(resp.ContentResponse.Body)
-		if errb != nil {
-			resp.Body = nil
-		} else {
-			resp.Body = datares
-
-		}
 	}
 
 	return resp, nil

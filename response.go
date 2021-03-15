@@ -129,7 +129,13 @@ func ReadRespons(b *bufio.ReadWriter) (resp *Response, err error) {
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Println(string(req.Header))
+	previewbytes := resp.Header.Get("Preview")
+	if previewbytes != "" {
+		resp.PreviewBytes, err = strconv.Atoi(previewbytes)
+		if err != nil {
+			return nil, &badStringError{"malformed Preview : header", previewbytes}
+		}
+	}
 
 	s = resp.Header.Get("Encapsulated")
 	if s == "" {
@@ -224,14 +230,15 @@ func ReadRespons(b *bufio.ReadWriter) (resp *Response, err error) {
 		} else {
 			bodyReader = ioutil.NopCloser(newChunkedReader(b))
 
-			/*filepath := "client/re_now.txt"
-			samplefile, _ := os.Create(filepath)
+			dataread, errb := ioutil.ReadAll(bodyReader)
+			if errb != nil {
+				fmt.Println(errb)
+			} else {
+				n := len(dataread)
+				resp.Body = append(resp.Body, dataread[:n]...)
+				respbody := len(resp.Body)
 
-			defer samplefile.Close()
-
-			//	io.Copy(samplefile, resp.ContentResponse.Body)
-			samplefile.ReadFrom(bodyReader)*/
-			// check errors
+			}
 		}
 	}
 
