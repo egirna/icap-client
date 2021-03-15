@@ -236,7 +236,6 @@ func ReadRespons(b *bufio.ReadWriter) (resp *Response, err error) {
 			} else {
 				n := len(dataread)
 				resp.Body = append(resp.Body, dataread[:n]...)
-				respbody := len(resp.Body)
 
 			}
 		}
