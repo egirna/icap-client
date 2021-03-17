@@ -22,11 +22,40 @@ type Request struct {
 	previewSet            bool
 	bodyFittedInPreview   bool
 	remainingPreviewBytes []byte
+	ConnType              string
 }
 
-// NewRequest is the factory function for Request
-func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Response) (*Request, error) {
+// NewRequestTLS is the factory function for Request
+func NewRequestTLS(method, urlStr string, httpReq *http.Request, httpResp *http.Response, conntype string) (*Request, error) {
+	method = strings.ToUpper(method)
 
+	u, err := url.Parse(urlStr)
+
+	if err != nil {
+		return nil, err
+	}
+	if conntype == "" {
+		conntype = "empty"
+	}
+
+	req := &Request{
+		Method:       method,
+		URL:          u,
+		Header:       make(map[string][]string),
+		HTTPRequest:  httpReq,
+		HTTPResponse: httpResp,
+		ConnType:     conntype,
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRequest  is the factory function for Request
+func NewRequest(method, urlStr string, httpReq *http.Request, httpResp *http.Response) (*Request, error) {
 	method = strings.ToUpper(method)
 
 	u, err := url.Parse(urlStr)
@@ -78,6 +107,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 		}
 
 		httpReqStr += string(b)
+
 		replaceRequestURIWithActualURL(&httpReqStr, req.HTTPRequest.URL.EscapedPath(), req.HTTPRequest.URL.String())
 
 		if req.Method == MethodREQMOD {
@@ -95,7 +125,7 @@ func DumpRequest(req *Request) ([]byte, error) {
 
 		}
 
-		if httpReqStr != "" { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+		if httpReqStr != "" { // if the HTTP Request message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte s
 			for !strings.HasSuffix(httpReqStr, DoubleCRLF) {
 				httpReqStr += CRLF
 			}
@@ -122,12 +152,13 @@ func DumpRequest(req *Request) ([]byte, error) {
 		if !bodyAlreadyChunked(httpRespStr) {
 			headerStr, bodyStr, ok := splitBodyAndHeader(httpRespStr)
 			if ok {
+				//888
 				addHexaBodyByteNotations(&bodyStr)
 				mergeHeaderAndBody(&httpRespStr, headerStr, bodyStr)
 			}
 		}
 
-		if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte offsets
+		if httpRespStr != "" && !strings.HasSuffix(httpRespStr, DoubleCRLF) { // if the HTTP Response message block doesn't end with a \r\n\r\n, then going to add one by force for better calculation of byte s
 			httpRespStr += CRLF
 		}
 
@@ -148,6 +179,8 @@ func DumpRequest(req *Request) ([]byte, error) {
 	if req.Method == MethodREQMOD && req.previewSet && req.bodyFittedInPreview {
 		addFullBodyInPreviewIndicator(&httpReqStr)
 	}
+	//	fmt.Println(reqStr)
+	//fmt.Println(httpReqStr)
 
 	data := []byte(reqStr + httpReqStr + httpRespStr)
 
