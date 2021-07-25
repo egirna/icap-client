@@ -1,4 +1,4 @@
-module github.com/egirna/icap-client
+module github.com/integrationworks/icap-client
 
 go 1.12
 
