@@ -9,7 +9,7 @@ Talk to the ICAP servers using probably the first ICAP client package in GO!
 
 ### Installing
 ```console
-go get -u github.com/egirna/icap-client
+go get -u github.com/integrationworks/icap-client
 
 ```
 
@@ -18,7 +18,7 @@ go get -u github.com/egirna/icap-client
 **Import The Package**
 
 ```go
-import ic "github.com/egirna/icap-client"
+import ic "github.com/integrationworks/icap-client"
 
 ```
 
