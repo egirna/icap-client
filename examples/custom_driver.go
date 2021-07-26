@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	ic "github.com/egirna/icap-client"
+	ic "github.com/integrationworks/icap-client"
 )
 
 func makeRespmodWithCustomDriver() {

@@ -1,8 +1,8 @@
 # icap-client
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Project status](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/egirna/icap-client/releases)
-[![GoDoc](https://godoc.org/github.com/egirna/icap-client?status.svg)](https://godoc.org/github.com/egirna/icap-client)
+<!-- [![Project status](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/egirna/icap-client/releases) -->
+<!-- [![GoDoc](https://godoc.org/github.com/egirna/icap-client?status.svg)](https://godoc.org/github.com/egirna/icap-client) -->
 
 
 Talk to the ICAP servers using probably the first ICAP client package in GO!
@@ -83,7 +83,7 @@ By default the icap-client will dump the debugging logs to the standard output(s
   ic.SetDebugOutput(f)
 ```
 
-For more details, see the [docs](https://godoc.org/github.com/egirna/icap-client) and [examples](examples/).
+<!-- For more details, see the [docs](https://godoc.org/github.com/egirna/icap-client) and [examples](examples/). -->
 
 
 ### Contributing
